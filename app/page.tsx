@@ -38,7 +38,7 @@ export default function Home() {
           </div>
 
           {/* Circular images on right - enhanced with more sophisticated styling */}
-          <div className="absolute right-[5%] top-2/3 -translate-y-1/2 hidden lg:block z-10 w-[40%] max-w-[500px]">
+          <div className="absolute right-[5%] top-1/2 -translate-y-1/2 hidden lg:block z-10 w-[40%] max-w-[500px]">
             <div className="relative h-[600px]">
               <div className="absolute top-[-60px] right-[10%] w-64 h-64 rounded-full shadow-xl overflow-hidden animate-float-slow">
                 <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/30 to-transparent dark:from-cyan-500/20 rounded-full p-1.5">
@@ -82,7 +82,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="container px-4 md:px-6 relative z-10">
+          <div className="container px-4 md:px-6 relative z-10 min-h-[800px]">
             <div className="max-w-3xl">
               <p className="text-lg md:text-xl font-medium mb-3 text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-500 dark:from-cyan-400 dark:to-blue-300 inline-block animate-shimmer-slow">
                 Find Your Next Experience

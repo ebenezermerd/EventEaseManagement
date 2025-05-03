@@ -130,12 +130,26 @@ export default function OrganizerRegisterPage() {
               {step === 2 && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="companyName">Legal Company Name</Label>
-                    <Input id="companyName" placeholder="Your company's legal name" required />
+                    <Label htmlFor="organizationName">Organization Name</Label>
+                    <Input id="organizationName" placeholder="Legal name of your organization" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tinNumber">TIN Number</Label>
                     <Input id="tinNumber" placeholder="Tax Identification Number" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPerson">Contact Person</Label>
+                      <Input id="contactPerson" placeholder="Primary contact person name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPhone">Contact Phone</Label>
+                      <Input id="contactPhone" placeholder="+251 91 234 5678" type="tel" required />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contactEmail">Contact Email</Label>
+                    <Input id="contactEmail" placeholder="contact@organization.com" type="email" required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="businessAddress">Business Address</Label>
@@ -159,6 +173,33 @@ export default function OrganizerRegisterPage() {
                       className="min-h-[100px]"
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="organizationLogo">Organization Logo (Optional)</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                        <svg
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="text-muted-foreground"
+                        >
+                          <path
+                            d="M12 16.5V14.5M15.2 13C15.2 15 13.6 16.5 12 16.5C10.4 16.5 8.8 15 8.8 13C8.8 11 10.4 9.5 12 9.5C13.6 9.5 15.2 11 15.2 13ZM3 18.4V5.6C3 4.72 3.72 4 4.5 4H19.5C20.33 4 21 4.72 21 5.6V18.4C21 19.28 20.33 20 19.5 20H4.5C3.72 20 3 19.28 3 18.4Z"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </div>
+                      <Input id="organizationLogo" type="file" accept="image/*" className="flex-1" />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload a square logo or image (recommended: 300x300px, max 2MB)
+                    </p>
                   </div>
                 </div>
               )}

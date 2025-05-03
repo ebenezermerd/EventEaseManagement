@@ -23,6 +23,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  ShoppingCart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -219,6 +220,13 @@ export function DashboardSidebar({
                       active={isActive("/dashboard/organizer/events/create")}
                     >
                       Create Event
+                    </NavItem>
+                    <NavItem
+                      href="/dashboard/organizer/orders"
+                      icon={ShoppingCart}
+                      active={isActive("/dashboard/organizer/orders")}
+                    >
+                      Orders
                     </NavItem>
                     <NavItem
                       href="/dashboard/organizer/attendees"

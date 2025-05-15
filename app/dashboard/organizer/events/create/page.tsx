@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -12,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Calendar, ImagePlus, Loader2, MapPin, Upload, AlertCircle } from "lucide-react"
+import { Calendar, ImagePlus, Loader2, MapPin, Upload, AlertCircle, Sparkles } from "lucide-react"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
@@ -22,6 +23,12 @@ import { Separator } from "@/components/ui/separator"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Combobox } from "@/components/ui/combobox"
+import { toast } from "@/components/ui/use-toast"
+import { useEvents } from "@/contexts/EventContext"
+import { useAuth } from "@/contexts/AuthContext"
+import { useAIGeneration } from "@/contexts/AIGenerationContext"
+import { AIEventActions } from "@/components/ai/ai-event-actions"
+import { useRouter as useNextRouter } from "next/router"
 
 // Ethiopian regions for autocomplete
 const ethiopianRegions = [
@@ -41,19 +48,38 @@ const ethiopianRegions = [
 ]
 
 // Zod schemas for each tab
-const detailsSchema = z.object({
-  title: z.string().min(5, { message: "Title must be at least 5 characters" }),
-  caption: z.string().min(10, { message: "Caption must be at least 10 characters" }),
-  description: z.string().min(50, { message: "Description must be at least 50 characters" }),
-  type: z.string({ required_error: "Please select an event type" }),
-  startDate: z.date({ required_error: "Start date is required" }),
-  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Please enter a valid time" }),
-  endDate: z.date({ required_error: "End date is required" }),
-  endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Please enter a valid time" }),
-  capacity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Capacity must be a positive number",
-  }),
-})
+const detailsSchema = z
+  .object({
+    title: z.string().min(5, { message: "Title must be at least 5 characters" }),
+    caption: z.string().optional(),
+    description: z.string().min(50, { message: "Description must be at least 50 characters" }),
+    type: z.string({ required_error: "Please select an event type" }),
+    startDate: z.date({ required_error: "Start date is required" }),
+    startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Please enter a valid time" }),
+    endDate: z.date({ required_error: "End date is required" }),
+    endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, { message: "Please enter a valid time" }),
+    capacity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Capacity must be a positive number",
+    }),
+  })
+  .refine(
+    (data) => {
+      // Create Date objects for start and end dates with their respective times
+      const startDateTime = new Date(
+        `${data.startDate.getFullYear()}-${data.startDate.getMonth() + 1}-${data.startDate.getDate()} ${data.startTime}`,
+      )
+      const endDateTime = new Date(
+        `${data.endDate.getFullYear()}-${data.endDate.getMonth() + 1}-${data.endDate.getDate()} ${data.endTime}`,
+      )
+
+      // Check if end date is after start date
+      return endDateTime > startDateTime
+    },
+    {
+      message: "End date and time must be after start date and time",
+      path: ["endDate"],
+    },
+  )
 
 const mediaLocationSchema = z.object({
   coverImage: z.string().optional(),
@@ -107,6 +133,12 @@ export default function CreateEventPage() {
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [eventImages, setEventImages] = useState<string[]>([])
   const [documents, setDocuments] = useState<string[]>([])
+  const [submissionError, setSubmissionError] = useState<string | null>(null)
+  const nextRouter = useNextRouter()
+  const searchParams = useSearchParams()
+  const { createEvent, isLoading } = useEvents()
+  const { isAuthenticated, role } = useAuth()
+  const { generatedTemplate } = useAIGeneration()
 
   // Initialize the form with default values
   const form = useForm<EventFormValues>({
@@ -143,6 +175,59 @@ export default function CreateEventPage() {
     mode: "onChange",
   })
 
+  // Apply generated template to form when available
+  useEffect(() => {
+    if (generatedTemplate && searchParams.get("useTemplate") === "true") {
+      // Set details
+      form.setValue("details.title", generatedTemplate.title)
+      form.setValue("details.caption", generatedTemplate.caption)
+      form.setValue("details.description", generatedTemplate.description)
+
+      // Set default dates if not already set
+      const today = new Date()
+      const nextMonth = new Date()
+      nextMonth.setMonth(today.getMonth() + 1)
+
+      if (!form.getValues("details.startDate")) {
+        form.setValue("details.startDate", nextMonth)
+      }
+
+      if (!form.getValues("details.startTime")) {
+        form.setValue("details.startTime", "10:00")
+      }
+
+      if (!form.getValues("details.endDate")) {
+        const endDate = new Date(nextMonth)
+        endDate.setDate(endDate.getDate() + 1)
+        form.setValue("details.endDate", endDate)
+      }
+
+      if (!form.getValues("details.endTime")) {
+        form.setValue("details.endTime", "17:00")
+      }
+
+      // Set ticket information if available
+      if (generatedTemplate.ticketTypes && generatedTemplate.ticketTypes.length > 0) {
+        const firstTicket = generatedTemplate.ticketTypes[0]
+        form.setValue("tickets.ticketName", firstTicket.name)
+        form.setValue("tickets.ticketDescription", firstTicket.description)
+
+        if (firstTicket.price) {
+          form.setValue("tickets.isPaid", true)
+          form.setValue("tickets.ticketPrice", firstTicket.price.toString())
+        }
+      }
+
+      // Trigger validation
+      form.trigger()
+
+      toast({
+        title: "Template Applied",
+        description: "The AI-generated content has been applied to your form.",
+      })
+    }
+  }, [generatedTemplate, form, searchParams])
+
   // Get form state
   const { formState } = form
   const detailsValid = !formState.errors.details
@@ -173,49 +258,99 @@ export default function CreateEventPage() {
   // Handle form submission
   const onSubmit = async (data: EventFormValues) => {
     setIsSubmitting(true)
+    setSubmissionError(null)
 
-    // Combine all form data
-    const eventData = {
-      ...data.details,
-      ...data.mediaLocation,
-      ...data.tickets,
-      coverImage,
-      eventImages,
-      documents,
-    }
+    try {
+      // Combine all form data
+      const eventData = {
+        title: data.details.title,
+        caption: data.details.caption || "",
+        description: data.details.description,
+        startDate: new Date(`${format(data.details.startDate, "yyyy-MM-dd")}T${data.details.startTime}`).toISOString(),
+        endDate: new Date(`${format(data.details.endDate, "yyyy-MM-dd")}T${data.details.endTime}`).toISOString(),
+        location: `${data.mediaLocation.venue}, ${data.mediaLocation.city}, ${data.mediaLocation.region}`,
+        capacity: Number.parseInt(data.details.capacity),
+        isFree: !data.tickets.isPaid,
+        price: data.tickets.isPaid ? Number.parseFloat(data.tickets.ticketPrice || "0") : 0,
+        image: coverImage || "",
+        images: eventImages,
+      }
 
-    // Simulate API call
-    console.log("Submitting event data:", eventData)
+      // Use the createEvent function from the context
+      const success = await createEvent(eventData)
 
-    setTimeout(() => {
+      if (success) {
+        // Redirect to events list on success
+        nextRouter.push("/dashboard/organizer/events")
+      }
+    } catch (error) {
+      console.error("Event creation error:", error)
+
+      // Set error state
+      setSubmissionError(error instanceof Error ? error.message : "Failed to create event. Please try again.")
+    } finally {
       setIsSubmitting(false)
-      // Redirect or show success message
-      alert("Event submitted for approval!")
-    }, 2000)
+    }
   }
 
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // In a real app, you would upload the file to a server
-    // For demo purposes, we'll just use a placeholder
-    setCoverImage("/placeholder.svg?height=300&width=600&text=Event+Cover")
-    form.setValue("mediaLocation.coverImage", "/placeholder.svg?height=300&width=600&text=Event+Cover")
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+
+      // In a real implementation, you would upload the file to a server
+      // For now, create a local preview URL
+      const previewUrl = URL.createObjectURL(file)
+      setCoverImage(previewUrl)
+      form.setValue("mediaLocation.coverImage", previewUrl)
+
+      // Store the file for later upload during form submission
+      // In a production app, you would implement a proper file upload service
+      // setUploadFiles(prev => ({ ...prev, coverImage: file }));
+    }
   }
 
-  const handleEventImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // In a real app, you would upload the file to a server
-    // For demo purposes, we'll just add a placeholder
-    const newImages = [...eventImages, "/placeholder.svg?height=200&width=300&text=Event+Image"]
-    setEventImages(newImages)
-    form.setValue("mediaLocation.eventImages", newImages)
+  const handleEventImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+
+      // Create a local preview URL
+      const previewUrl = URL.createObjectURL(file)
+      const newImages = [...eventImages, previewUrl]
+      setEventImages(newImages)
+      form.setValue("mediaLocation.eventImages", newImages)
+
+      // Store the file for later upload
+      // In a production app, you would implement a proper file upload service
+      // setUploadFiles(prev => ({ ...prev, eventImages: [...prev.eventImages, file] }));
+    }
   }
 
-  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // In a real app, you would upload the file to a server
-    // For demo purposes, we'll just add a placeholder
-    const newDocuments = [...documents, "document.pdf"]
-    setDocuments(newDocuments)
-    form.setValue("tickets.documents", newDocuments)
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+
+      // Store the document name
+      const newDocuments = [...documents, file.name]
+      setDocuments(newDocuments)
+      form.setValue("tickets.documents", newDocuments)
+
+      // Store the file for later upload
+      // In a production app, you would implement a proper file upload service
+      // setUploadFiles(prev => ({ ...prev, documents: [...prev.documents, file] }));
+    }
   }
+
+  // Check if user is logged in and is an organizer
+  useEffect(() => {
+    if (!isAuthenticated || role !== "organizer") {
+      toast({
+        title: "Access Denied",
+        description: "You must be logged in as an organizer to create events.",
+        variant: "destructive",
+      })
+      nextRouter.push("/login")
+    }
+  }, [isAuthenticated, role, nextRouter])
 
   return (
     <div className="p-6 space-y-6">
@@ -224,6 +359,8 @@ export default function CreateEventPage() {
           <h1 className="text-3xl font-bold tracking-tight">Create New Event</h1>
           <p className="text-muted-foreground">Fill in the details to create a new event</p>
         </div>
+
+        <AIEventActions showSave={true} />
       </div>
 
       <Form {...form}>
@@ -252,6 +389,16 @@ export default function CreateEventPage() {
                       <AlertTitle>Error</AlertTitle>
                       <AlertDescription>
                         Please fill in all required fields correctly before proceeding to the next section.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {generatedTemplate && (
+                    <Alert className="bg-muted/50 border-primary/20">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <AlertTitle>AI-Generated Content</AlertTitle>
+                      <AlertDescription>
+                        This form has been pre-filled with AI-generated content. Feel free to edit any details.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -711,6 +858,14 @@ export default function CreateEventPage() {
                     </Alert>
                   )}
 
+                  {submissionError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Submission Error</AlertTitle>
+                      <AlertDescription>{submissionError}</AlertDescription>
+                    </Alert>
+                  )}
+
                   <FormField
                     control={form.control}
                     name="tickets.isPaid"
@@ -868,15 +1023,9 @@ export default function CreateEventPage() {
                   <Button type="button" variant="outline" onClick={() => setActiveTab("media")}>
                     Back: Media & Location
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit for Approval"
-                    )}
+                  <Button type="submit" disabled={isLoading || isSubmitting}>
+                    {(isLoading || isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Submit Event
                   </Button>
                 </CardFooter>
               </Card>

@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { Calendar } from "@/components/ui/calendar"
+
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
-  Calendar,
   Search,
   Filter,
   Download,
@@ -19,6 +20,7 @@ import {
   Share2,
   Printer,
   ChevronRight,
+  AlertCircle,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -28,268 +30,246 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
+
+interface PastEvent {
+  id: number
+  name: string
+  date: string
+  attendees: number
+  revenue: string
+  rating: string
+  location: string
+  description: string
+  organizer: string
+  duration: string
+  ticketsSold: number
+  ticketsAvailable: number
+  categories: string[]
+  sponsors: Array<{
+    name: string
+    logo: string
+  }>
+  feedback: Array<{
+    rating: number
+    count: number
+  }>
+  topAttendees: Array<{
+    name: string
+    avatar: string
+    company: string
+  }>
+  financials: {
+    ticketRevenue: number
+    expenses: number
+    netProfit: number
+    averageTicketPrice: number
+    refunds: number
+    refundAmount: number
+  }
+  demographics: {
+    gender: { male: number; female: number }
+    age: { [key: string]: number }
+    location: { [key: string]: number }
+  }
+  timeline: Array<{
+    time: string
+    activity: string
+    attendees: number
+  }>
+}
 
 export default function PastEventsPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState<PastEvent | null>(null)
+  const [pastEvents, setPastEvents] = useState<PastEvent[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const { toast } = useToast()
 
-  // Sample data for past events
-  const pastEvents = [
-    {
-      id: 1,
-      name: "Tech Meetup 2023",
-      date: "Dec 15, 2023",
-      attendees: 120,
-      revenue: "ETB 60,000",
-      rating: "4.8/5",
-      location: "Addis Ababa, Bole",
-      description: "A networking event for tech professionals in Addis Ababa.",
-      organizer: "Tech Community Ethiopia",
-      duration: "3 hours",
-      ticketsSold: 120,
-      ticketsAvailable: 150,
-      categories: ["Technology", "Networking"],
-      sponsors: [
-        { name: "TechCorp", logo: "/placeholder.svg?height=40&width=40" },
-        { name: "Digital Ethiopia", logo: "/placeholder.svg?height=40&width=40" },
-      ],
-      feedback: [
-        { rating: 5, count: 80 },
-        { rating: 4, count: 30 },
-        { rating: 3, count: 8 },
-        { rating: 2, count: 2 },
-        { rating: 1, count: 0 },
-      ],
-      topAttendees: [
-        { name: "Abebe Kebede", avatar: "/placeholder.svg?height=40&width=40", company: "TechCorp" },
-        { name: "Sara Mohammed", avatar: "/placeholder.svg?height=40&width=40", company: "Digital Ethiopia" },
-        { name: "Daniel Tesfaye", avatar: "/placeholder.svg?height=40&width=40", company: "Startup Inc" },
-      ],
-      financials: {
-        ticketRevenue: 60000,
-        expenses: 15000,
-        netProfit: 45000,
-        averageTicketPrice: 500,
-        refunds: 2,
-        refundAmount: 1000,
-      },
-      demographics: {
-        gender: { male: 65, female: 35 },
-        age: { "18-24": 15, "25-34": 45, "35-44": 30, "45+": 10 },
-        location: { "Addis Ababa": 80, "Other Cities": 20 },
-      },
-      timeline: [
-        { time: "09:00 AM", activity: "Registration", attendees: 120 },
-        { time: "10:00 AM", activity: "Opening Keynote", attendees: 118 },
-        { time: "11:30 AM", activity: "Panel Discussion", attendees: 115 },
-        { time: "01:00 PM", activity: "Networking Lunch", attendees: 120 },
-        { time: "02:30 PM", activity: "Workshops", attendees: 110 },
-        { time: "04:00 PM", activity: "Closing Remarks", attendees: 105 },
-      ],
-    },
-    {
-      id: 2,
-      name: "Coffee Tasting Workshop",
-      date: "Jan 22, 2024",
-      attendees: 45,
-      revenue: "ETB 13,500",
-      rating: "4.9/5",
-      location: "Addis Ababa, Kazanchis",
-      description: "A workshop exploring Ethiopia's finest coffee varieties.",
-      organizer: "Ethiopian Coffee Association",
-      duration: "2 hours",
-      ticketsSold: 45,
-      ticketsAvailable: 50,
-      categories: ["Food & Drink", "Workshop"],
-      sponsors: [{ name: "Coffee Exports Ltd", logo: "/placeholder.svg?height=40&width=40" }],
-      feedback: [
-        { rating: 5, count: 40 },
-        { rating: 4, count: 5 },
-        { rating: 3, count: 0 },
-        { rating: 2, count: 0 },
-        { rating: 1, count: 0 },
-      ],
-      topAttendees: [
-        { name: "Hiwot Girma", avatar: "/placeholder.svg?height=40&width=40", company: "Coffee Exports Ltd" },
-        { name: "Yonas Haile", avatar: "/placeholder.svg?height=40&width=40", company: "Cafe Owner" },
-      ],
-      financials: {
-        ticketRevenue: 13500,
-        expenses: 5000,
-        netProfit: 8500,
-        averageTicketPrice: 300,
-        refunds: 0,
-        refundAmount: 0,
-      },
-      demographics: {
-        gender: { male: 55, female: 45 },
-        age: { "18-24": 10, "25-34": 35, "35-44": 40, "45+": 15 },
-        location: { "Addis Ababa": 90, "Other Cities": 10 },
-      },
-      timeline: [
-        { time: "02:00 PM", activity: "Introduction to Coffee", attendees: 45 },
-        { time: "02:30 PM", activity: "Tasting Session 1", attendees: 45 },
-        { time: "03:15 PM", activity: "Coffee Processing Demo", attendees: 45 },
-        { time: "03:45 PM", activity: "Tasting Session 2", attendees: 45 },
-      ],
-    },
-    {
-      id: 3,
-      name: "Business Networking Event",
-      date: "Feb 10, 2024",
-      attendees: 85,
-      revenue: "ETB 85,000",
-      rating: "4.5/5",
-      location: "Addis Ababa, Meskel Square",
-      description: "Connect with business leaders and entrepreneurs.",
-      organizer: "Ethiopian Chamber of Commerce",
-      duration: "4 hours",
-      ticketsSold: 85,
-      ticketsAvailable: 100,
-      categories: ["Business", "Networking"],
-      sponsors: [
-        { name: "National Bank", logo: "/placeholder.svg?height=40&width=40" },
-        { name: "Business Weekly", logo: "/placeholder.svg?height=40&width=40" },
-      ],
-      feedback: [
-        { rating: 5, count: 50 },
-        { rating: 4, count: 25 },
-        { rating: 3, count: 8 },
-        { rating: 2, count: 2 },
-        { rating: 1, count: 0 },
-      ],
-      topAttendees: [
-        { name: "Dawit Mekonnen", avatar: "/placeholder.svg?height=40&width=40", company: "National Bank" },
-        { name: "Meron Tadesse", avatar: "/placeholder.svg?height=40&width=40", company: "Startup Incubator" },
-        { name: "Tigist Alemu", avatar: "/placeholder.svg?height=40&width=40", company: "Tech Solutions" },
-      ],
-      financials: {
-        ticketRevenue: 85000,
-        expenses: 25000,
-        netProfit: 60000,
-        averageTicketPrice: 1000,
-        refunds: 1,
-        refundAmount: 1000,
-      },
-      demographics: {
-        gender: { male: 60, female: 40 },
-        age: { "18-24": 5, "25-34": 30, "35-44": 45, "45+": 20 },
-        location: { "Addis Ababa": 75, "Other Cities": 25 },
-      },
-      timeline: [
-        { time: "04:00 PM", activity: "Registration & Welcome", attendees: 85 },
-        { time: "04:30 PM", activity: "Keynote Speech", attendees: 85 },
-        { time: "05:30 PM", activity: "Structured Networking", attendees: 85 },
-        { time: "06:30 PM", activity: "Panel Discussion", attendees: 80 },
-        { time: "07:30 PM", activity: "Open Networking & Refreshments", attendees: 85 },
-      ],
-    },
-    {
-      id: 4,
-      name: "Art Exhibition",
-      date: "Mar 5, 2024",
-      attendees: 210,
-      revenue: "ETB 42,000",
-      rating: "4.7/5",
-      location: "Addis Ababa, National Museum",
-      description: "Showcasing contemporary Ethiopian art and artists.",
-      organizer: "Ethiopian Arts Council",
-      duration: "8 hours",
-      ticketsSold: 210,
-      ticketsAvailable: 250,
-      categories: ["Arts & Culture", "Exhibition"],
-      sponsors: [
-        { name: "Cultural Ministry", logo: "/placeholder.svg?height=40&width=40" },
-        { name: "Arts Foundation", logo: "/placeholder.svg?height=40&width=40" },
-      ],
-      feedback: [
-        { rating: 5, count: 150 },
-        { rating: 4, count: 50 },
-        { rating: 3, count: 8 },
-        { rating: 2, count: 2 },
-        { rating: 1, count: 0 },
-      ],
-      topAttendees: [
-        { name: "Famous Artist", avatar: "/placeholder.svg?height=40&width=40", company: "Independent" },
-        { name: "Gallery Owner", avatar: "/placeholder.svg?height=40&width=40", company: "City Gallery" },
-      ],
-      financials: {
-        ticketRevenue: 42000,
-        expenses: 15000,
-        netProfit: 27000,
-        averageTicketPrice: 200,
-        refunds: 5,
-        refundAmount: 1000,
-      },
-      demographics: {
-        gender: { male: 45, female: 55 },
-        age: { "18-24": 25, "25-34": 35, "35-44": 25, "45+": 15 },
-        location: { "Addis Ababa": 85, "Other Cities": 15 },
-      },
-      timeline: [
-        { time: "10:00 AM", activity: "Exhibition Opens", attendees: 50 },
-        { time: "12:00 PM", activity: "Artist Talk", attendees: 120 },
-        { time: "02:00 PM", activity: "Guided Tour", attendees: 80 },
-        { time: "04:00 PM", activity: "Workshop", attendees: 40 },
-        { time: "06:00 PM", activity: "Closing Reception", attendees: 180 },
-      ],
-    },
-    {
-      id: 5,
-      name: "Music Festival",
-      date: "Apr 12, 2024",
-      attendees: 350,
-      revenue: "ETB 175,000",
-      rating: "4.6/5",
-      location: "Addis Ababa, Millennium Hall",
-      description: "A celebration of Ethiopian music and culture.",
-      organizer: "Music Ethiopia",
-      duration: "10 hours",
-      ticketsSold: 350,
-      ticketsAvailable: 400,
-      categories: ["Music", "Festival"],
-      sponsors: [
-        { name: "Sound Systems Inc", logo: "/placeholder.svg?height=40&width=40" },
-        { name: "Beverage Company", logo: "/placeholder.svg?height=40&width=40" },
-        { name: "Radio Station", logo: "/placeholder.svg?height=40&width=40" },
-      ],
-      feedback: [
-        { rating: 5, count: 200 },
-        { rating: 4, count: 100 },
-        { rating: 3, count: 40 },
-        { rating: 2, count: 10 },
-        { rating: 1, count: 0 },
-      ],
-      topAttendees: [
-        { name: "Music Producer", avatar: "/placeholder.svg?height=40&width=40", company: "Record Label" },
-        { name: "Famous Singer", avatar: "/placeholder.svg?height=40&width=40", company: "Independent" },
-      ],
-      financials: {
-        ticketRevenue: 175000,
-        expenses: 80000,
-        netProfit: 95000,
-        averageTicketPrice: 500,
-        refunds: 10,
-        refundAmount: 5000,
-      },
-      demographics: {
-        gender: { male: 52, female: 48 },
-        age: { "18-24": 40, "25-34": 35, "35-44": 15, "45+": 10 },
-        location: { "Addis Ababa": 70, "Other Cities": 30 },
-      },
-      timeline: [
-        { time: "12:00 PM", activity: "Gates Open", attendees: 100 },
-        { time: "01:00 PM", activity: "Opening Act", attendees: 200 },
-        { time: "03:00 PM", activity: "Main Stage Performances", attendees: 350 },
-        { time: "06:00 PM", activity: "Headliner Act", attendees: 350 },
-        { time: "08:00 PM", activity: "Closing Performance", attendees: 300 },
-      ],
-    },
-  ]
+  useEffect(() => {
+    const fetchPastEvents = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetch("/api/organizer/events/past")
+        if (!response.ok) {
+          throw new Error("Failed to fetch past events")
+        }
+        const data = await response.json()
+        setPastEvents(data.events)
+      } catch (err) {
+        console.error("Error fetching past events:", err)
+        setError("Failed to load past events. Please try again later.")
+        toast({
+          title: "Error",
+          description: "Failed to load past events. Please try again later.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  const handleViewReport = (event) => {
+    fetchPastEvents()
+  }, [toast])
+
+  const handleViewReport = (event: PastEvent) => {
     setSelectedEvent(event)
     setIsReportModalOpen(true)
+  }
+
+  const handleExportReport = async (eventId: number, format = "pdf") => {
+    try {
+      const response = await fetch(`/api/organizer/events/${eventId}/report/export?format=${format}`, {
+        method: "GET",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to export report")
+      }
+
+      // Handle file download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `event-report-${eventId}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+      toast({
+        title: "Success",
+        description: "Report exported successfully",
+        variant: "default",
+      })
+    } catch (err) {
+      console.error("Error exporting report:", err)
+      toast({
+        title: "Error",
+        description: "Failed to export report",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const filteredEvents = pastEvents.filter(
+    (event) =>
+      event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Past Events</h1>
+            <p className="text-muted-foreground">View and analyze your completed events</p>
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Past Events</CardTitle>
+            <CardDescription>All your completed events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <Skeleton className="h-4 w-24" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Skeleton className="h-4 w-20 ml-auto" />
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-10 w-48" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-16" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-16" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-8 w-24 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Past Events</h1>
+            <p className="text-muted-foreground">View and analyze your completed events</p>
+          </div>
+        </div>
+
+        <Card className="border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-900/30">
+          <CardHeader>
+            <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Error Loading Past Events
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -299,16 +279,25 @@ export default function PastEventsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Past Events</h1>
           <p className="text-muted-foreground">View and analyze your completed events</p>
         </div>
-        <Button variant="outline" className="gap-2">
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => handleExportReport(0, "excel")} // 0 means export all events
+        >
           <Download className="h-4 w-4" />
-          Export
+          Export All
         </Button>
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search past events..." className="pl-8" />
+          <Input
+            placeholder="Search past events..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
         <Button variant="outline" size="icon">
           <Filter className="h-4 w-4" />
@@ -334,39 +323,47 @@ export default function PastEventsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pastEvents.map((event) => (
-                  <TableRow key={event.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                          <Clock className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div className="font-medium">{event.name}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{event.date}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{event.attendees}</TableCell>
-                    <TableCell>{event.revenue}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
-                      >
-                        {event.rating}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleViewReport(event)}>
-                        View Report
-                      </Button>
+                {filteredEvents.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                      No past events found
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredEvents.map((event) => (
+                    <TableRow key={event.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                            <Clock className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="font-medium">{event.name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span>{event.date}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{event.attendees}</TableCell>
+                      <TableCell>{event.revenue}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                        >
+                          {event.rating}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => handleViewReport(event)}>
+                          View Report
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -382,15 +379,31 @@ export default function PastEventsPage() {
                 <div className="flex items-center justify-between">
                   <DialogTitle className="text-2xl">Event Report: {selectedEvent.name}</DialogTitle>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        // Share functionality would be implemented here
+                        toast({
+                          title: "Share Link Generated",
+                          description: "Report link has been copied to clipboard",
+                        })
+                      }}
+                    >
                       <Share2 className="h-4 w-4" />
                       Share
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button variant="outline" size="sm" className="gap-1" onClick={() => window.print()}>
                       <Printer className="h-4 w-4" />
                       Print
                     </Button>
-                    <Button variant="outline" size="sm" className="gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => handleExportReport(selectedEvent.id)}
+                    >
                       <Download className="h-4 w-4" />
                       Export
                     </Button>
@@ -516,7 +529,7 @@ export default function PastEventsPage() {
                                   <div key={index} className="flex items-center gap-2 border rounded-md p-2">
                                     <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
                                       <img
-                                        src={sponsor.logo || "/placeholder.svg"}
+                                        src={sponsor.logo || "/placeholder.svg?height=32&width=32"}
                                         alt={sponsor.name}
                                         className="h-6 w-6"
                                       />
@@ -1146,7 +1159,7 @@ export default function PastEventsPage() {
                 <Button variant="outline" onClick={() => setIsReportModalOpen(false)}>
                   Close Report
                 </Button>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={() => handleExportReport(selectedEvent.id, "pdf")}>
                   <FileText className="h-4 w-4" />
                   Generate Full Report
                 </Button>

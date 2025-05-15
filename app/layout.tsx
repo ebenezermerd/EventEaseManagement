@@ -2,17 +2,18 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AuthProvider } from "@/contexts/AuthContext"
 import { Toaster } from "@/components/ui/toaster"
+import { AuthProvider } from "@/contexts/AuthContext"
+import { EventProvider } from "@/contexts/EventContext"
+import { CategoryProvider } from "@/contexts/CategoryContext"
+import { LocationProvider } from "@/contexts/LocationContext"
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/env"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EventEase - Event Management Platform for Ethiopia",
-  description:
-    "A mobile-first event management platform for discovering, creating, and attending events across Ethiopia.",
-  generator: "EventEase",
+  title: APP_NAME,
+  description: APP_DESCRIPTION,
 }
 
 export default function RootLayout({
@@ -23,14 +24,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <div className="flex-1">{children}</div>
-            </div>
-            <Toaster />
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <CategoryProvider>
+            <LocationProvider>
+              <EventProvider>
+                <div className="relative flex min-h-screen flex-col">
+                  <div className="flex-1">{children}</div>
+                </div>
+                <Toaster />
+              </EventProvider>
+            </LocationProvider>
+          </CategoryProvider>
+        </AuthProvider>
       </body>
     </html>
   )

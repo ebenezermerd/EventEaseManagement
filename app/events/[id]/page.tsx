@@ -194,28 +194,6 @@ const relatedEvents = [
     attendees: 120,
     image: "/placeholder.svg?height=300&width=500&text=Startup+Pitch",
   },
-  {
-    id: 12,
-    title: "Tech Startup Hackathon",
-    date: "September 5, 2024",
-    time: "9:00 AM - 9:00 PM",
-    location: "iceaddis, Addis Ababa",
-    price: "ETB 100",
-    category: "Technology",
-    attendees: 150,
-    image: "/placeholder.svg?height=300&width=500&text=Hackathon",
-  },
-  {
-    id: 14,
-    title: "Digital Marketing Conference",
-    date: "September 28, 2024",
-    time: "9:00 AM - 5:00 PM",
-    location: "Capital Hotel, Addis Ababa",
-    price: "ETB 800",
-    category: "Business",
-    attendees: 220,
-    image: "/placeholder.svg?height=300&width=500&text=Marketing+Conference",
-  },
 ]
 
 export default function EventDetailPage({ params }: { params: { id: string } }) {

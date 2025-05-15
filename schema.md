@@ -332,6 +332,8 @@ interface User {
   name: string;               // Full name
   phone?: string;             // Optional phone number
   avatar?: string;            // URL to profile image
+  bio?: string;               // User bio/about text
+  address?: string;           // User address
   role: 'admin' | 'organizer' | 'attendee';  // User role
   status: 'active' | 'inactive' | 'pending'; // Account status
   joinDate: Date;             // When user joined
@@ -341,6 +343,19 @@ interface User {
   resetPasswordExpires?: Date; // Token expiration
   createdAt: Date;            // Record creation timestamp
   updatedAt: Date;            // Record update timestamp
+  preferences?: UserPreferences; // User preferences for the platform
+}
+
+// New interface for user preferences
+interface UserPreferences {
+  notificationSettings: {
+    email: boolean;           // Email notifications
+    push: boolean;            // Push notifications
+    sms: boolean;             // SMS notifications
+  };
+  categories: string[];       // Preferred event categories
+  locations: string[];        // Preferred event locations
+  calendarSync: boolean;      // Whether to sync with external calendar
 }
 \`\`\`
 
@@ -461,7 +476,7 @@ interface OrderItem {
   totalPrice: number;         // Total price for this item
   attendeeName?: string;      // Attendee name
   attendeeEmail?: string;     // Attendee email
-  checkInStatus: 'not_checked' | 'checked_in'; // Check-in status
+  checkInStatus: 'not_checked' | 'checked_in' | 'cancelled'; // Check-in status
   checkInTime?: Date;         // Check-in timestamp
   ticketCode: string;         // Unique ticket identifier/barcode
   createdAt: Date;            // Record creation timestamp
@@ -524,9 +539,10 @@ interface Notification {
   userId: string;             // Foreign key to User
   title: string;              // Notification title
   message: string;            // Notification message
-  type: 'info' | 'success' | 'warning' | 'error'; // Notification type
+  type: 'ticket' | 'reminder' | 'recommendation' | 'price' | 'cancellation' | 'system'; // Notification type
   read: boolean;              // Whether notification has been read
   link?: string;              // Optional action link
+  actionUrl?: string;         // URL to navigate to when clicked
   createdAt: Date;            // Creation timestamp
 }
 
@@ -540,6 +556,67 @@ interface PaymentTransaction {
   status: 'pending' | 'completed' | 'failed' | 'refunded'; // Transaction status
   metadata: any;              // Provider-specific metadata
   transactionDate: Date;      // When transaction occurred
+  createdAt: Date;            // Record creation timestamp
+  updatedAt: Date;            // Record update timestamp
+}
+
+// New models for attendee features
+
+interface SavedEvent {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  eventId: string;            // Foreign key to Event
+  savedAt: Date;              // When event was saved
+  notes?: string;             // Optional notes about the saved event
+  createdAt: Date;            // Record creation timestamp
+  updatedAt: Date;            // Record update timestamp
+}
+
+interface EventReminder {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  eventId: string;            // Foreign key to Event
+  reminderDate: Date;         // When to send the reminder
+  reminderSent: boolean;      // Whether reminder has been sent
+  reminderType: 'email' | 'push' | 'sms'; // Type of reminder
+  createdAt: Date;            // Record creation timestamp
+  updatedAt: Date;            // Record update timestamp
+}
+
+interface UserEventInteraction {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  eventId: string;            // Foreign key to Event
+  interactionType: 'view' | 'click' | 'share' | 'bookmark' | 'purchase'; // Type of interaction
+  interactionDate: Date;      // When interaction occurred
+  metadata?: any;             // Additional metadata about interaction
+  createdAt: Date;            // Record creation timestamp
+}
+
+interface Calendar {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  name: string;               // Calendar name
+  color: string;              // Calendar color (hex code)
+  isDefault: boolean;         // Whether this is the default calendar
+  externalCalendarId?: string; // ID for external calendar sync
+  externalCalendarType?: 'google' | 'outlook' | 'apple'; // Type of external calendar
+  createdAt: Date;            // Record creation timestamp
+  updatedAt: Date;            // Record update timestamp
+}
+
+interface CalendarEvent {
+  id: string;                 // UUID primary key
+  calendarId: string;         // Foreign key to Calendar
+  eventId?: string;           // Optional foreign key to Event (if related to platform event)
+  title: string;              // Event title
+  description?: string;       // Event description
+  startDate: Date;            // Event start date and time
+  endDate: Date;              // Event end date and time
+  location?: string;          // Event location
+  isAllDay: boolean;          // Whether event is all day
+  recurrence?: string;        // Recurrence rule (RRULE format)
+  reminder?: number;          // Reminder time in minutes before event
   createdAt: Date;            // Record creation timestamp
   updatedAt: Date;            // Record update timestamp
 }
@@ -856,6 +933,448 @@ interface PaymentTransaction {
  *   success: boolean,
  *   message: string,
  *   count: number
+ * }
+ */
+
+/**
+ * Delete Notification
+ * DELETE /api/users/notifications/:id
+ * Authorization: Required
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string
+ * }
+ */
+
+/**
+ * Clear Read Notifications
+ * DELETE /api/users/notifications/read
+ * Authorization: Required
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   count: number // Number of notifications deleted
+ * }
+ */
+
+// New endpoints for attendee features
+
+/**
+ * Get User Saved Events
+ * GET /api/users/saved-events
+ * 
+ * Query Parameters:
+ * - page: number
+ * - limit: number
+ * - category?: string
+ * - sortBy?: 'date' | 'recent' | 'title'
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   savedEvents: [
+ *     {
+ *       id: string,
+ *       eventId: string,
+ *       title: string,
+ *       date: string,
+ *       location: string,
+ *       price: string,
+ *       category: string,
+ *       image: string,
+ *       savedAt: string
+ *     }
+ *   ],
+ *   pagination: {
+ *     total: number,
+ *     page: number,
+ *     limit: number,
+ *     pages: number
+ *   }
+ * }
+ */
+
+/**
+ * Save Event
+ * POST /api/users/saved-events
+ * 
+ * Request Body:
+ * {
+ *   eventId: string,
+ *   notes?: string
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   savedEvent?: {
+ *     id: string,
+ *     eventId: string,
+ *     savedAt: string
+ *   }
+ * }
+ */
+
+/**
+ * Remove Saved Event
+ * DELETE /api/users/saved-events/:eventId
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string
+ * }
+ */
+
+/**
+ * Clear All Saved Events
+ * DELETE /api/users/saved-events
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   count: number
+ * }
+ */
+
+/**
+ * Get User Tickets
+ * GET /api/users/tickets
+ * 
+ * Query Parameters:
+ * - status?: 'upcoming' | 'past' | 'cancelled'
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   tickets: [
+ *     {
+ *       id: string,
+ *       eventId: string,
+ *       eventTitle: string,
+ *       eventDate: string,
+ *       eventLocation: string,
+ *       ticketType: string,
+ *       price: string,
+ *       quantity: number,
+ *       status: string,
+ *       bookingReference: string,
+ *       purchaseDate: string
+ *     }
+ *   ]
+ * }
+ */
+
+/**
+ * Download Ticket
+ * GET /api/users/tickets/:id/download
+ * 
+ * Response:
+ * PDF file download
+ */
+
+/**
+ * Cancel Ticket
+ * PUT /api/users/tickets/:id/cancel
+ * 
+ * Request Body:
+ * {
+ *   reason?: string
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   ticket?: {
+ *     // Updated ticket object
+ *   }
+ * }
+ */
+
+/**
+ * Get Ticket QR Code
+ * GET /api/users/tickets/:id/qr-code
+ * Authorization: Required
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   qrCodeData: string, // Base64 encoded QR code image
+ *   ticketReference: string
+ * }
+ */
+
+/**
+ * Get User Calendar
+ * GET /api/users/calendar
+ * 
+ * Query Parameters:
+ * - month: number
+ * - year: number
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   events: [
+ *     {
+ *       id: string,
+ *       title: string,
+ *       startDate: string,
+ *       endDate: string,
+ *       isAllDay: boolean,
+ *       location?: string,
+ *       eventId?: string,
+ *       calendarId: string,
+ *       calendarName: string,
+ *       calendarColor: string
+ *     }
+ *   ]
+ * }
+ */
+
+/**
+ * Create Calendar Event
+ * POST /api/users/calendar/events
+ * 
+ * Request Body:
+ * {
+ *   calendarId: string,
+ *   eventId?: string,
+ *   title: string,
+ *   description?: string,
+ *   startDate: string,
+ *   endDate: string,
+ *   location?: string,
+ *   isAllDay: boolean,
+ *   recurrence?: string,
+ *   reminder?: number
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   calendarEvent?: {
+ *     // Created calendar event object
+ *   }
+ * }
+ */
+
+/**
+ * Update Calendar Event
+ * PUT /api/users/calendar/events/:id
+ * 
+ * Request Body:
+ * {
+ *   // Fields to update
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   calendarEvent?: {
+ *     // Updated calendar event object
+ *   }
+ * }
+ */
+
+/**
+ * Delete Calendar Event
+ * DELETE /api/users/calendar/events/:id
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string
+ * }
+ */
+
+/**
+ * Get User Calendars
+ * GET /api/users/calendars
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   calendars: [
+ *     {
+ *       id: string,
+ *       name: string,
+ *       color: string,
+ *       isDefault: boolean,
+ *       externalCalendarType?: string
+ *     }
+ *   ]
+ * }
+ */
+
+/**
+ * Create Calendar
+ * POST /api/users/calendars
+ * 
+ * Request Body:
+ * {
+ *   name: string,
+ *   color: string,
+ *   isDefault?: boolean
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   calendar?: {
+ *     // Created calendar object
+ *   }
+ * }
+ */
+
+/**
+ * Connect External Calendar
+ * POST /api/users/calendars/connect
+ * 
+ * Request Body:
+ * {
+ *   calendarId: string,
+ *   externalCalendarType: 'google' | 'outlook' | 'apple',
+ *   authCode: string
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   calendar?: {
+ *     // Updated calendar object
+ *   }
+ * }
+ */
+
+/**
+ * Sync Calendar
+ * POST /api/users/calendars/:id/sync
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   eventsAdded: number,
+ *   eventsUpdated: number,
+ *   eventsRemoved: number
+ * }
+ */
+
+/**
+ * Get Event Feed
+ * GET /api/users/feed
+ * 
+ * Query Parameters:
+ * - page: number
+ * - limit: number
+ * - search?: string
+ * - category?: string
+ * - date?: 'all' | 'upcoming' | 'today' | 'tomorrow' | 'weekend' | 'week'
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   events: [
+ *     {
+ *       id: string,
+ *       title: string,
+ *       description: string,
+ *       date: string,
+ *       time: string,
+ *       location: string,
+ *       price: string,
+ *       category: string,
+ *       attendees: number,
+ *       image: string,
+ *       isSaved: boolean
+ *     }
+ *   ],
+ *   pagination: {
+ *     total: number,
+ *     page: number,
+ *     limit: number,
+ *     pages: number
+ *   }
+ * }
+ */
+
+/**
+ * Get User Recommendations
+ * GET /api/users/recommendations
+ * 
+ * Query Parameters:
+ * - limit: number
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   events: [
+ *     {
+ *       id: string,
+ *       title: string,
+ *       date: string,
+ *       location: string,
+ *       price: string,
+ *       category: string,
+ *       image: string,
+ *       matchScore: number, // How well it matches user preferences
+ *       matchReason: string // Reason for recommendation
+ *     }
+ *   ]
+ * }
+ */
+
+/**
+ * Update Notification Settings
+ * PUT /api/users/notification-settings
+ * 
+ * Request Body:
+ * {
+ *   email: boolean,
+ *   push: boolean,
+ *   sms: boolean
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   settings?: {
+ *     // Updated notification settings
+ *   }
+ * }
+ */
+
+/**
+ * Update User Preferences
+ * PUT /api/users/preferences
+ * 
+ * Request Body:
+ * {
+ *   categories?: string[],
+ *   locations?: string[],
+ *   calendarSync?: boolean
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   preferences?: {
+ *     // Updated user preferences
+ *   }
  * }
  */
 \`\`\`
@@ -2126,6 +2645,174 @@ export default function UserDashboardPage() {
 }
 \`\`\`
 
+### My Events Page
+
+**Data Requirements:**
+- User's event feed with filtering options
+- Saved events with sorting and filtering
+- User's tickets (upcoming, past, cancelled)
+- Calendar view of events
+- User profile and preferences
+- Notifications
+
+**API Endpoints:**
+\`\`\`typescript
+// Get event feed with personalized recommendations
+GET /api/users/feed?page=1&limit=10&category=technology&date=upcoming
+
+// Get saved events
+GET /api/users/saved-events?page=1&limit=12&sortBy=date
+
+// Get user tickets
+GET /api/users/tickets?status=upcoming
+
+// Get calendar events
+GET /api/users/calendar?month=5&year=2024
+
+// Get user profile
+GET /api/users/profile
+
+// Get recommendations
+GET /api/users/recommendations?limit=6
+
+// Get notifications
+GET /api/users/notifications?unreadOnly=true
+\`\`\`
+
+**Implementation:**
+\`\`\`typescript
+// In the MyEventsPage component
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+export default function MyEventsPage() {
+  const [activeTab, setActiveTab] = useState('feed');
+  const [feedData, setFeedData] = useState([]);
+  const [savedEvents, setSavedEvents] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [calendarEvents, setCalendarEvents] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTabData = async () => {
+      setLoading(true);
+      try {
+        // Fetch data based on active tab
+        if (activeTab === 'feed') {
+          const feedRes = await axios.get('/api/users/feed?limit=10');
+          const recommendationsRes = await axios.get('/api/users/recommendations?limit=6');
+          setFeedData(feedRes.data.events);
+          setRecommendations(recommendationsRes.data.events);
+        } else if (activeTab === 'saved') {
+          const savedRes = await axios.get('/api/users/saved-events');
+          setSavedEvents(savedRes.data.savedEvents);
+        } else if (activeTab === 'tickets') {
+          const ticketsRes = await axios.get('/api/users/tickets');
+          setTickets(ticketsRes.data.tickets);
+        } else if (activeTab === 'calendar') {
+          const date = new Date();
+          const calendarRes = await axios.get(
+            `/api/users/calendar?month=${date.getMonth() + 1}&year=${date.getFullYear()}`
+          );
+          setCalendarEvents(calendarRes.data.events);
+        } else if (activeTab === 'profile') {
+          const profileRes = await axios.get('/api/users/profile');
+          setProfile(profileRes.data.user);
+        }
+      } catch (error) {
+        console.error(`Error fetching ${activeTab} data:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTabData();
+  }, [activeTab]);
+
+  // Load notifications on initial render only
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const notificationsRes = await axios.get('/api/users/notifications?unreadOnly=true');
+        setNotifications(notificationsRes.data.notifications);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  // Event Feed Component Implementation
+  const renderEventFeed = () => {
+    return (
+      <div className="space-y-6">
+        {/* Search and filters */}
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search input */}
+          {/* Category filters */}
+          {/* Date filters */}
+        </div>
+        
+        {/* Events list with filter handling */}
+        <div className="space-y-6">
+          {loading ? (
+            <div className="space-y-6">
+              {/* Loading skeletons */}
+            </div>
+          ) : (
+            feedData.map(event => (
+              <div key={event.id} className="card">
+                {/* Event card contents */}
+              </div>
+            ))
+          )}
+        </div>
+        
+        {/* Recommendations section */}
+        <div className="mt-10">
+          <h2 className="text-2xl font-bold">Recommended For You</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+            {/* Recommended events */}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render appropriate component based on active tab
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="tabs">
+          {/* Tab navigation */}
+        </div>
+        
+        {/* Notification center */}
+        <div className="relative">
+          <button className="bell-icon">
+            {notifications.length > 0 && (
+              <span className="badge">{notifications.length}</span>
+            )}
+          </button>
+        </div>
+      </div>
+      
+      <div className="tab-content">
+        {activeTab === 'feed' && renderEventFeed()}
+        {activeTab === 'saved' && /* Saved Events Component */}
+        {activeTab === 'tickets' && /* My Tickets Component */}
+        {activeTab === 'calendar' && /* Calendar View Component */}
+        {activeTab === 'profile' && /* Attendee Profile Component */}
+      </div>
+    </div>
+  );
+}
+```
+
 ### Organizer Dashboard
 
 **Data Requirements:**
@@ -2728,7 +3415,939 @@ export async function getEventWithCache(eventId) {
   
   return event;
 }
+
+// Example caching for user-specific data like saved events
+export async function getUserSavedEventsWithCache(userId) {
+  const cacheKey = `user:${userId}:savedEvents`;
+  
+  // Try to get from cache first
+  const cachedSavedEvents = await redisClient.get(cacheKey);
+  if (cachedSavedEvents) {
+    return JSON.parse(cachedSavedEvents);
+  }
+  
+  // If not in cache, get from database
+  const savedEvents = await SavedEvent.find({ userId })
+    .populate('eventId', 'title date location price category image')
+    .sort({ savedAt: -1 })
+    .lean();
+  
+  // Store in cache with 5 minute expiry (shorter for dynamic user data)
+  await redisClient.set(cacheKey, JSON.stringify(savedEvents), {
+    EX: 300 // 5 minutes
+  });
+  
+  return savedEvents;
+}
+
+// When data is updated, invalidate the cache
+export async function invalidateUserCache(userId, cacheType) {
+  const cacheKey = `user:${userId}:${cacheType}`;
+  await redisClient.del(cacheKey);
+}
 \`\`\`
+
+## AI-Powered Event Generation
+
+This section details the schema extensions and implementation guidelines for the AI-powered event generation feature in the EventEase application.
+
+### Database Schema Extensions
+
+#### Entity Relationship Diagram Addition
+
+```mermaid
+erDiagram
+    USER {
+        uuid id PK
+        string email
+        string name
+        enum role
+    }
+    
+    EVENT_TEMPLATE {
+        uuid id PK
+        uuid userId FK
+        string name
+        string eventType
+        json templateData
+        datetime createdAt
+        datetime updatedAt
+    }
+    
+    AI_GENERATION_LOG {
+        uuid id PK
+        uuid userId FK
+        string prompt
+        json parameters
+        json result
+        enum status
+        string errorMessage
+        string model
+        int tokensUsed
+        datetime createdAt
+    }
+    
+    USER ||--o{ EVENT_TEMPLATE : creates
+    USER ||--o{ AI_GENERATION_LOG : generates
+```
+
+#### SQL Table Definitions
+
+```sql
+-- Event Templates Table
+CREATE TABLE event_templates (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    event_type VARCHAR(50) NOT NULL,
+    template_data JSONB NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_event_templates_user_id ON event_templates(user_id);
+CREATE INDEX idx_event_templates_event_type ON event_templates(event_type);
+CREATE INDEX idx_event_templates_created_at ON event_templates(created_at);
+
+-- AI Generation Logs Table
+CREATE TABLE ai_generation_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    prompt TEXT NOT NULL,
+    parameters JSONB NOT NULL,
+    result JSONB,
+    status VARCHAR(20) NOT NULL CHECK (status IN ('success', 'error', 'pending')),
+    error_message TEXT,
+    model VARCHAR(50) NOT NULL,
+    tokens_used INTEGER,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_ai_generation_logs_user_id ON ai_generation_logs(user_id);
+CREATE INDEX idx_ai_generation_logs_status ON ai_generation_logs(status);
+CREATE INDEX idx_ai_generation_logs_created_at ON ai_generation_logs(created_at);
+```
+
+### Data Models
+
+```typescript
+interface EventTemplate {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  name: string;               // Template name
+  eventType: string;          // Event type (conference, workshop, etc.)
+  templateData: {             // JSON data containing the template
+    title: string;            // Event title
+    caption: string;          // Short caption
+    description: string;      // Brief description
+    longDescription: string;  // Detailed description
+    schedule: Array<{         // Event schedule
+      time: string;           // Time slot
+      title: string;          // Activity title
+      description: string;    // Activity description
+    }>;
+    faqs: Array<{             // Frequently asked questions
+      question: string;       // Question text
+      answer: string;         // Answer text
+    }>;
+    ticketTypes: Array<{      // Ticket options
+      name: string;           // Ticket name
+      description: string;    // Ticket description
+      benefits: string[];     // List of benefits
+      price?: number;         // Optional price
+    }>;
+    suggestedImages: Array<{  // Image suggestions
+      description: string;    // Image description
+      prompt: string;         // Image generation prompt
+    }>;
+  };
+  createdAt: Date;            // Creation timestamp
+  updatedAt: Date;            // Update timestamp
+}
+
+interface AIGenerationLog {
+  id: string;                 // UUID primary key
+  userId: string;             // Foreign key to User
+  prompt: string;             // The prompt sent to the AI
+  parameters: {               // Generation parameters
+    eventType: string;        // Type of event
+    topic?: string;           // Event topic/theme
+    location?: string;        // Event location
+    targetAudience?: string;  // Target audience
+    additionalDetails?: string; // Additional context
+  };
+  result?: any;               // The AI response (may be large)
+  status: 'success' | 'error' | 'pending'; // Generation status
+  errorMessage?: string;      // Error message if failed
+  model: string;              // AI model used (e.g., "gemini-pro")
+  tokensUsed?: number;        // Number of tokens used
+  createdAt: Date;            // Creation timestamp
+}
+
+interface GenerationParams {
+  eventType: 'conference' | 'workshop' | 'concert' | 'exhibition' | 'festival' | 'networking' | 'other';
+  topic?: string;
+  location?: string;
+  targetAudience?: string;
+  additionalDetails?: string;
+}
+```
+
+### API Endpoints
+
+```typescript
+/**
+ * Generate Event Content
+ * POST /api/organizers/events/generate
+ * Authorization: Required (Organizer)
+ * 
+ * Request Body:
+ * {
+ *   eventType: string,
+ *   topic?: string,
+ *   location?: string,
+ *   targetAudience?: string,
+ *   additionalDetails?: string
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   eventTemplate: {
+ *     title: string,
+ *     caption: string,
+ *     description: string,
+ *     longDescription: string,
+ *     schedule: Array<{
+ *       time: string,
+ *       title: string,
+ *       description: string
+ *     }>,
+ *     faqs: Array<{
+ *       question: string,
+ *       answer: string
+ *     }>,
+ *     ticketTypes: Array<{
+ *       name: string,
+ *       description: string,
+ *       benefits: string[],
+ *       price?: number
+ *     }>,
+ *     suggestedImages: Array<{
+ *       description: string,
+ *       prompt: string
+ *     }>
+ *   }
+ * }
+ */
+
+/**
+ * Save Template
+ * POST /api/organizers/templates
+ * Authorization: Required (Organizer)
+ * 
+ * Request Body:
+ * {
+ *   name: string,
+ *   eventType: string,
+ *   template: {
+ *     // Template data as described above
+ *   }
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string,
+ *   templateId?: string
+ * }
+ */
+
+/**
+ * Get Saved Templates
+ * GET /api/organizers/templates
+ * Authorization: Required (Organizer)
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   templates: Array<{
+ *     id: string,
+ *     name: string,
+ *     eventType: string,
+ *     createdAt: string
+ *   }>
+ * }
+ */
+
+/**
+ * Get Template by ID
+ * GET /api/organizers/templates/:id
+ * Authorization: Required (Organizer)
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   template: {
+ *     // Complete template data
+ *   }
+ * }
+ */
+
+/**
+ * Delete Template
+ * DELETE /api/organizers/templates/:id
+ * Authorization: Required (Organizer)
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   message: string
+ * }
+ */
+
+/**
+ * Generate Image for Event
+ * POST /api/organizers/events/generate-image
+ * Authorization: Required (Organizer)
+ * 
+ * Request Body:
+ * {
+ *   prompt: string,
+ *   size?: '1024x1024' | '512x512' | '256x256'
+ * }
+ * 
+ * Response:
+ * {
+ *   success: boolean,
+ *   imageUrl?: string,
+ *   error?: string
+ * }
+ */
+```
+
+### AI Provider Configuration
+
+#### Environment Variables
+
+```plaintext
+# AI Provider Configuration
+AI_PROVIDER=gemini  # Options: gemini, openai, anthropic
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-pro  # or other model versions
+
+# Optional OpenAI Configuration (if using OpenAI)
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-4o  # or other model versions
+
+# Optional Anthropic Configuration (if using Anthropic)
+ANTHROPIC_API_KEY=your_anthropic_api_key
+ANTHROPIC_MODEL=claude-3-opus  # or other model versions
+
+# Image Generation Configuration
+IMAGE_GENERATION_PROVIDER=stability  # Options: stability, openai, midjourney
+STABILITY_API_KEY=your_stability_api_key
+```
+
+#### AI Service Configuration
+
+```typescript
+// config/ai.config.js
+module.exports = {
+  defaultProvider: process.env.AI_PROVIDER || 'gemini',
+  
+  providers: {
+    gemini: {
+      apiKey: process.env.GEMINI_API_KEY,
+      model: process.env.GEMINI_MODEL || 'gemini-pro',
+      maxTokens: 8192,
+      temperature: 0.7,
+      topP: 0.95,
+    },
+    
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      maxTokens: 4096,
+      temperature: 0.7,
+      topP: 0.95,
+    },
+    
+    anthropic: {
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      model: process.env.ANTHROPIC_MODEL || 'claude-3-opus',
+      maxTokens: 4096,
+      temperature: 0.7,
+      topP: 0.95,
+    }
+  },
+  
+  imageGeneration: {
+    provider: process.env.IMAGE_GENERATION_PROVIDER || 'stability',
+    stability: {
+      apiKey: process.env.STABILITY_API_KEY,
+      engine: 'stable-diffusion-xl-1024-v1-0',
+      dimensions: '1024x1024',
+      steps: 30,
+      cfgScale: 7,
+    },
+    openai: {
+      apiKey: process.env.OPENAI_API_KEY,
+      model: 'dall-e-3',
+      dimensions: '1024x1024',
+      quality: 'standard',
+    }
+  },
+  
+  // Rate limiting configuration
+  rateLimit: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 50, // limit each user to 50 requests per hour
+    standardHeaders: true,
+    legacyHeaders: false,
+  },
+  
+  // Logging configuration
+  logging: {
+    enabled: true,
+    logPrompts: true,
+    logResponses: true,
+    logTokenUsage: true,
+  }
+}
+```
+
+### API Implementation Examples
+
+#### Generate Event Content
+
+```typescript
+// controllers/ai-controller.js
+import { v4 as uuidv4 } from 'uuid';
+import pool from '../config/database';
+import { getAIClient } from '../services/ai-service';
+import { aiConfig } from '../config/ai.config';
+
+export async function generateEventContent(req, res) {
+  const { eventType, topic, location, targetAudience, additionalDetails } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    // Build the prompt for the AI
+    const prompt = buildEventGenerationPrompt({ eventType, topic, location, targetAudience, additionalDetails });
+    
+    // Create a log entry
+    const logId = uuidv4();
+    await pool.query(
+      `INSERT INTO ai_generation_logs 
+       (id, user_id, prompt, parameters, status, model, created_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+      [
+        logId, 
+        userId, 
+        prompt, 
+        JSON.stringify({ eventType, topic, location, targetAudience, additionalDetails }), 
+        'pending', 
+        aiConfig.providers[aiConfig.defaultProvider].model
+      ]
+    );
+    
+    // Get the AI client based on the configured provider
+    const aiClient = getAIClient();
+    
+    // Generate content
+    const result = await aiClient.generateContent(prompt);
+    
+    let eventTemplate;
+    // Parse the JSON response
+    try {
+      // Extract JSON from the response (it might be wrapped in markdown code blocks)
+      const jsonMatch = result.text.match(/```json\n([\s\S]*?)\n```/) || result.text.match(/```\n([\s\S]*?)\n```/) || [null, result.text];
+      const jsonString = jsonMatch[1] || result.text;
+      eventTemplate = JSON.parse(jsonString);
+      
+      // Update log with success
+      await pool.query(
+        `UPDATE ai_generation_logs 
+         SET status = $1, result = $2, tokens_used = $3 
+         WHERE id = $4`,
+        ['success', JSON.stringify(eventTemplate), result.tokensUsed || 0, logId]
+      );
+      
+      return res.json({
+        success: true,
+        eventTemplate
+      });
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      
+      // Update log with error
+      await pool.query(
+        `UPDATE ai_generation_logs 
+         SET status = $1, error_message = $2, result = $3 
+         WHERE id = $4`,
+        ['error', `Failed to parse AI response: ${parseError.message}`, JSON.stringify(result.text), logId]
+      );
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to parse AI response',
+        error: parseError.message
+      });
+    }
+  } catch (error) {
+    console.error('Error generating event content:', error);
+    
+    // Update log with error if it exists
+    await pool.query(
+      `UPDATE ai_generation_logs 
+       SET status = $1, error_message = $2 
+       WHERE id = $3`,
+      ['error', error.message, logId]
+    );
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate event content',
+      error: error.message
+    });
+  }
+}
+
+function buildEventGenerationPrompt(params) {
+  return `
+You are an expert event planner with years of experience creating professional events in Ethiopia. 
+Your task is to create detailed content for a ${params.eventType} event${params.topic ? ` about ${params.topic}` : ''}${params.location ? ` in ${params.location}` : ''}${params.targetAudience ? ` targeted at ${params.targetAudience}` : ''}.
+
+${params.additionalDetails ? `Additional context: ${params.additionalDetails}` : ''}
+
+Please generate the following content for this event:
+
+1. A catchy, professional title (max 10 words)
+2. A brief caption/tagline (max 15 words)
+3. A concise description (2-3 sentences)
+4. A detailed description (3-4 paragraphs)
+5. A schedule with 4-6 time slots, each with a title and description
+6. 5-7 frequently asked questions with answers
+7. 2-3 ticket types with names, descriptions, and bullet points for benefits
+8. 3 image suggestions with descriptions and generation prompts
+
+Format your response as a valid JSON object with the following structure:
+{
+  "title": "Event Title",
+  "caption": "Event Tagline",
+  "description": "Brief description",
+  "longDescription": "Detailed description...",
+  "schedule": [
+    {
+      "time": "9:00 AM - 10:00 AM",
+      "title": "Activity Title",
+      "description": "Activity description"
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Question text?",
+      "answer": "Answer text"
+    }
+  ],
+  "ticketTypes": [
+    {
+      "name": "Ticket Name",
+      "description": "Ticket description",
+      "benefits": ["Benefit 1", "Benefit 2"],
+      "price": 500
+    }
+  ],
+  "suggestedImages": [
+    {
+      "description": "Image description",
+      "prompt": "Detailed image generation prompt"
+    }
+  ]
+}
+
+Make sure the content is professional, engaging, and appropriate for the Ethiopian market. Include local cultural references where appropriate.
+  `;
+}
+```
+
+#### Save Template
+
+```typescript
+export async function saveTemplate(req, res) {
+  const { name, eventType, template } = req.body;
+  const userId = req.user.id;
+  
+  try {
+    const templateId = uuidv4();
+    
+    const result = await pool.query(
+      `INSERT INTO event_templates 
+       (id, user_id, name, event_type, template_data, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) 
+       RETURNING id`,
+      [templateId, userId, name, eventType, JSON.stringify(template)]
+    );
+    
+    return res.json({
+      success: true,
+      message: 'Template saved successfully',
+      templateId: result.rows[0].id
+    });
+  } catch (error) {
+    console.error('Error saving template:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to save template',
+      error: error.message
+    });
+  }
+}
+```
+
+#### Get Templates
+
+```typescript
+export async function getTemplates(req, res) {
+  const userId = req.user.id;
+  
+  try {
+    const result = await pool.query(
+      `SELECT id, name, event_type, created_at 
+       FROM event_templates 
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+    
+    return res.json({
+      success: true,
+      templates: result.rows.map(t => ({
+        id: t.id,
+        name: t.name,
+        eventType: t.event_type,
+        createdAt: t.created_at
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching templates:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch templates',
+      error: error.message
+    });
+  }
+}
+```
+
+### Integration with Existing Services
+
+#### AI Service Implementation
+
+```typescript
+// services/ai-service.js
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { OpenAI } from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
+import { aiConfig } from '../config/ai.config';
+
+export function getAIClient() {
+  const provider = aiConfig.defaultProvider;
+  
+  switch(provider) {
+    case 'gemini':
+      return new GeminiAIClient();
+    case 'openai':
+      return new OpenAIClient();
+    case 'anthropic':
+      return new AnthropicAIClient();
+    default:
+      throw new Error(`Unsupported AI provider: ${provider}`);
+  }
+}
+
+class GeminiAIClient {
+  constructor() {
+    const genAI = new GoogleGenerativeAI(aiConfig.providers.gemini.apiKey);
+    this.model = genAI.getGenerativeModel({ model: aiConfig.providers.gemini.model });
+    this.config = aiConfig.providers.gemini;
+  }
+  
+  async generateContent(prompt) {
+    const result = await this.model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: this.config.temperature,
+        topP: this.config.topP,
+        maxOutputTokens: this.config.maxTokens,
+      }
+    });
+    
+    const response = result.response;
+    return {
+      text: response.text(),
+      tokensUsed: response.usageMetadata?.totalTokens
+    };
+  }
+}
+
+class OpenAIClient {
+  constructor() {
+    this.client = new OpenAI(aiConfig.providers.openai.apiKey);
+    this.config = aiConfig.providers.openai;
+  }
+  
+  async generateContent(prompt) {
+    const response = await this.client.chat.completions.create({
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature,
+      max_tokens: this.config.maxTokens,
+      top_p: this.config.topP
+    });
+    
+    return {
+      text: response.choices[0].message.content,
+      tokensUsed: response.usage?.total_tokens
+    };
+  }
+}
+
+class AnthropicAIClient {
+  constructor() {
+    this.client = new Anthropic({ apiKey: aiConfig.providers.anthropic.apiKey });
+    this.config = aiConfig.providers.anthropic;
+  }
+  
+  async generateContent(prompt) {
+    const response = await this.client.messages.create({
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature,
+      max_tokens: this.config.maxTokens,
+      top_p: this.config.topP
+    });
+    
+    return {
+      text: response.content[0].text,
+      tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens
+    };
+  }
+}
+```
+
+#### Image Generation Service Implementation
+
+```typescript
+// services/image-generation-service.js
+import axios from 'axios';
+import { aiConfig } from '../config/ai.config';
+import { v4 as uuidv4 } from 'uuid';
+
+export async function generateImage(prompt, size = '1024x1024') {
+  const provider = aiConfig.imageGeneration.provider;
+  
+  switch(provider) {
+    case 'stability':
+      return await generateStabilityImage(prompt, size);
+    case 'openai':
+      return await generateOpenAIImage(prompt, size);
+    default:
+      throw new Error(`Unsupported image generation provider: ${provider}`);
+  }
+}
+
+async function generateStabilityImage(prompt, size) {
+  const config = aiConfig.imageGeneration.stability;
+  const dimensions = size.split('x').map(s => parseInt(s, 10));
+  
+  try {
+    const response = await axios.post(
+      'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
+      {
+        text_prompts: [{ text: prompt }],
+        cfg_scale: config.cfgScale,
+        height: dimensions[1],
+        width: dimensions[0],
+        steps: config.steps,
+        samples: 1,
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+      }
+    );
+    
+    // Process the base64 image and save it to storage or return as a data URL
+    const imageData = response.data.artifacts[0].base64;
+    const imageUrl = await saveImageToStorage(imageData);
+    
+    return {
+      success: true,
+      imageUrl
+    };
+  } catch (error) {
+    console.error('Error generating image with Stability AI:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+async function generateOpenAIImage(prompt, size) {
+  const config = aiConfig.imageGeneration.openai;
+  
+  try {
+    const openai = new OpenAI(config.apiKey);
+    const response = await openai.images.generate({
+      model: config.model,
+      prompt,
+      size,
+      quality: config.quality,
+      n: 1,
+    });
+    
+    // For DALL-E 3, we get a URL directly
+    const imageUrl = response.data[0].url;
+    
+    // You might want to save this to your own storage
+    const savedImageUrl = await downloadAndSaveImage(imageUrl);
+    
+    return {
+      success: true,
+      imageUrl: savedImageUrl
+    };
+  } catch (error) {
+    console.error('Error generating image with OpenAI:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+// Helper function to save an image to your storage
+async function saveImageToStorage(base64Image) {
+  // This implementation will depend on your storage solution (S3, Azure Blob, etc.)
+  // Here's a simplified example:
+  const imageId = uuidv4();
+  const filePath = `generated-images/${imageId}.png`;
+  
+  // Save the base64 image to your storage
+  // ...
+  
+  // Return the URL to the saved image
+  return `https://your-storage-url.com/${filePath}`;
+}
+
+async function downloadAndSaveImage(imageUrl) {
+  // Download the image from the provided URL and save it to your storage
+  // ...
+  
+  // Return the URL to the saved image
+  return `https://your-storage-url.com/generated-images/${uuidv4()}.png`;
+}
+```
+
+### Frontend Integration
+
+#### Event Service Methods
+
+```typescript
+// lib/services/event-service.ts (addition)
+
+/**
+ * Generate event content using AI
+ */
+static async generateEventContent(params: GenerationParams): Promise<APIResponse<EventTemplate>> {
+  return await apiClient.post<APIResponse<EventTemplate>>(
+    "/api/organizers/events/generate",
+    params
+  );
+}
+
+/**
+ * Save event template
+ */
+static async saveEventTemplate(name: string, eventType: string, template: any): Promise<APIResponse<{templateId: string}>> {
+  return await apiClient.post<APIResponse<{templateId: string}>>(
+    "/api/organizers/templates",
+    { name, eventType, template }
+  );
+}
+
+/**
+ * Get saved templates
+ */
+static async getSavedTemplates(): Promise<APIResponse<{templates: SavedTemplate[]}>> {
+  return await apiClient.get<APIResponse<{templates: SavedTemplate[]}>>(
+    "/api/organizers/templates"
+  );
+}
+
+/**
+ * Get template by ID
+ */
+static async getTemplateById(id: string): Promise<APIResponse<{template: EventTemplate}>> {
+  return await apiClient.get<APIResponse<{template: EventTemplate}>>(
+    `/api/organizers/templates/${id}`
+  );
+}
+
+/**
+ * Delete template
+ */
+static async deleteTemplate(id: string): Promise<APIResponse<{}>> {
+  return await apiClient.delete<APIResponse<{}>>(
+    `/api/organizers/templates/${id}`
+  );
+}
+
+/**
+ * Generate image for event
+ */
+static async generateEventImage(prompt: string, size: string = '1024x1024'): Promise<APIResponse<{imageUrl: string}>> {
+  return await apiClient.post<APIResponse<{imageUrl: string}>>(
+    "/api/organizers/events/generate-image",
+    { prompt, size }
+  );
+}
+```
+
+### Implementation Notes
+
+1. **Performance Considerations**
+   - Use proper indexing as shown in SQL table creation scripts
+   - Consider caching frequently accessed templates
+   - Store AI generation logs but consider a retention policy for older logs
+
+2. **Security Considerations**
+   - Validate all user inputs to prevent injection attacks
+   - Implement proper authentication and authorization
+   - Rate limit AI generation endpoints to prevent abuse
+   - Sanitize AI-generated content before storing/returning it
+
+3. **AI Provider Flexibility**
+   - The implementation allows switching between different AI providers
+   - Configuration can be changed via environment variables
+   - Each provider has provider-specific optimizations
+
+4. **Error Handling**
+   - Comprehensive error handling is implemented throughout the codebase
+   - All errors are logged and appropriate responses are sent to the client
+   - AI generation logs track failures for debugging
+
+5. **Content Moderation**
+   - Consider implementing content moderation for user prompts and AI-generated content
+   - This can be done through a middleware or a separate service
+
 
 ## Conclusion
 

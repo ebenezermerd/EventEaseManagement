@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Order {
   id: string
@@ -39,6 +41,7 @@ interface Order {
     avatar?: string
   }
   event: {
+    id: string
     name: string
     date: string
   }
@@ -61,188 +64,188 @@ export default function OrdersPage() {
   const [selectedRows, setSelectedRows] = useState<string[]>([])
   const [selectedDates, setSelectedDates] = useState<string>("all")
   const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
-  // Sample data
-  const orders: Order[] = [
-    {
-      id: "ord_001",
-      orderNumber: "#ORD20241234",
-      customer: {
-        name: "Kidist Hailu",
-        email: "kidist.hailu@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Ethiopian Coffee Festival",
-        date: "Jun 15, 2024",
-      },
-      orderDate: "May 2, 2024",
-      amount: 1250,
-      status: "completed",
-      paymentMethod: "Telebirr",
-      tickets: [
-        {
-          type: "VIP",
-          quantity: 1,
-          price: 1000,
+  useEffect(() => {
+    const fetchOrders = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const response = await fetch("/api/organizer/orders")
+        if (!response.ok) {
+          throw new Error("Failed to fetch orders")
+        }
+        const data = await response.json()
+        setOrders(data.orders)
+      } catch (err) {
+        console.error("Error fetching orders:", err)
+        setError("Failed to load orders. Please try again later.")
+        toast({
+          title: "Error",
+          description: "Failed to load orders. Please try again later.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [toast])
+
+  const handleMarkAsPaid = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/organizer/orders/${orderId}/mark-paid`, {
+        method: "PUT",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update order status")
+      }
+
+      // Update local state
+      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: "completed" } : order)))
+
+      toast({
+        title: "Success",
+        description: "Order has been marked as paid",
+        variant: "default",
+      })
+    } catch (err) {
+      console.error("Error updating order:", err)
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/organizer/orders/${orderId}/cancel`, {
+        method: "PUT",
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to cancel order")
+      }
+
+      // Update local state
+      setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: "cancelled" } : order)))
+
+      toast({
+        title: "Success",
+        description: "Order has been cancelled",
+        variant: "default",
+      })
+    } catch (err) {
+      console.error("Error cancelling order:", err)
+      toast({
+        title: "Error",
+        description: "Failed to cancel order",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleProcessRefund = async () => {
+    if (!selectedOrder) return
+
+    try {
+      const response = await fetch(`/api/organizer/orders/${selectedOrder.id}/refund`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          type: "Standard",
-          quantity: 1,
-          price: 250,
+        body: JSON.stringify({
+          reason: document.querySelector<HTMLSelectElement>("#refundReason")?.value,
+          sendNotification: document.querySelector<HTMLInputElement>("#sendNotification")?.checked,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to process refund")
+      }
+
+      // Update local state
+      setOrders(orders.map((order) => (order.id === selectedOrder.id ? { ...order, status: "refunded" } : order)))
+
+      toast({
+        title: "Success",
+        description: "Refund has been processed successfully",
+        variant: "default",
+      })
+
+      setIsRefunding(false)
+      setSelectedOrder(null)
+    } catch (err) {
+      console.error("Error processing refund:", err)
+      toast({
+        title: "Error",
+        description: "Failed to process refund",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleExportOrders = async () => {
+    try {
+      const format = document.querySelector<HTMLSelectElement>("#exportFormat")?.value
+      const dateRange = document.querySelector<HTMLSelectElement>("#dateRange")?.value
+
+      const response = await fetch("/api/organizer/orders/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      ],
-    },
-    {
-      id: "ord_002",
-      orderNumber: "#ORD20245678",
-      customer: {
-        name: "Abel Tesfaye",
-        email: "abel.tesfaye@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Tech Summit Addis",
-        date: "Jun 22, 2024",
-      },
-      orderDate: "May 3, 2024",
-      amount: 500,
-      status: "pending",
-      paymentMethod: "CBE Birr",
-      tickets: [
-        {
-          type: "Early Bird",
-          quantity: 2,
-          price: 250,
-        },
-      ],
-    },
-    {
-      id: "ord_003",
-      orderNumber: "#ORD20249012",
-      customer: {
-        name: "Sara Mohammed",
-        email: "sara.mohammed@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Ethiopian Coffee Festival",
-        date: "Jun 15, 2024",
-      },
-      orderDate: "May 1, 2024",
-      amount: 3000,
-      status: "completed",
-      paymentMethod: "Commercial Bank",
-      tickets: [
-        {
-          type: "VIP",
-          quantity: 3,
-          price: 1000,
-        },
-      ],
-    },
-    {
-      id: "ord_004",
-      orderNumber: "#ORD20243456",
-      customer: {
-        name: "Dawit Bekele",
-        email: "dawit.bekele@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Tech Summit Addis",
-        date: "Jun 22, 2024",
-      },
-      orderDate: "Apr 29, 2024",
-      amount: 750,
-      status: "refunded",
-      paymentMethod: "Telebirr",
-      tickets: [
-        {
-          type: "Standard",
-          quantity: 3,
-          price: 250,
-        },
-      ],
-    },
-    {
-      id: "ord_005",
-      orderNumber: "#ORD20247890",
-      customer: {
-        name: "Tigist Alemu",
-        email: "tigist.alemu@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Fashion Week Addis",
-        date: "Jul 10, 2024",
-      },
-      orderDate: "May 4, 2024",
-      amount: 2000,
-      status: "completed",
-      paymentMethod: "Awash Bank",
-      tickets: [
-        {
-          type: "Premium",
-          quantity: 2,
-          price: 1000,
-        },
-      ],
-    },
-    {
-      id: "ord_006",
-      orderNumber: "#ORD20242345",
-      customer: {
-        name: "Abebe Kebede",
-        email: "abebe.kebede@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Fashion Week Addis",
-        date: "Jul 10, 2024",
-      },
-      orderDate: "May 5, 2024",
-      amount: 500,
-      status: "cancelled",
-      paymentMethod: "Telebirr",
-      tickets: [
-        {
-          type: "Standard",
-          quantity: 2,
-          price: 250,
-        },
-      ],
-    },
-    {
-      id: "ord_007",
-      orderNumber: "#ORD20246789",
-      customer: {
-        name: "Meron Tadesse",
-        email: "meron.tadesse@example.com",
-        avatar: "/placeholder.svg?height=32&width=32",
-      },
-      event: {
-        name: "Tech Summit Addis",
-        date: "Jun 22, 2024",
-      },
-      orderDate: "May 6, 2024",
-      amount: 1500,
-      status: "completed",
-      paymentMethod: "Commercial Bank",
-      tickets: [
-        {
-          type: "VIP",
-          quantity: 1,
-          price: 1000,
-        },
-        {
-          type: "Standard",
-          quantity: 2,
-          price: 250,
-        },
-      ],
-    },
-  ]
+        body: JSON.stringify({
+          format,
+          dateRange,
+          orderIds: selectedRows.length > 0 ? selectedRows : undefined,
+          includeFields: {
+            id: document.querySelector<HTMLInputElement>("#include-id")?.checked,
+            customer: document.querySelector<HTMLInputElement>("#include-customer")?.checked,
+            event: document.querySelector<HTMLInputElement>("#include-event")?.checked,
+            tickets: document.querySelector<HTMLInputElement>("#include-tickets")?.checked,
+            payment: document.querySelector<HTMLInputElement>("#include-payment")?.checked,
+            status: document.querySelector<HTMLInputElement>("#include-status")?.checked,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to export orders")
+      }
+
+      // Handle file download
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `orders-export-${new Date().toISOString().split("T")[0]}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+
+      setExportModalOpen(false)
+      toast({
+        title: "Success",
+        description: "Orders exported successfully",
+        variant: "default",
+      })
+    } catch (err) {
+      console.error("Error exporting orders:", err)
+      toast({
+        title: "Error",
+        description: "Failed to export orders",
+        variant: "destructive",
+      })
+    }
+  }
 
   const toggleSelectRow = (id: string) => {
     setSelectedRows((current) => {
@@ -272,7 +275,7 @@ export default function OrdersPage() {
 
     const matchesStatus = filterStatus === "all" || order.status === filterStatus
 
-    // Basic date filtering (could be enhanced with actual date range selection)
+    // Basic date filtering
     let matchesDate = true
     const orderDate = new Date(order.orderDate)
     const now = new Date()
@@ -300,6 +303,129 @@ export default function OrdersPage() {
   const totalAmount = filteredOrders
     .filter((order) => selectedRows.includes(order.id))
     .reduce((sum, order) => sum + order.amount, 0)
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between pb-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+            <p className="text-muted-foreground">Manage your event orders and payments</p>
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-[180px]" />
+          <Skeleton className="h-10 w-10" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Order List</CardTitle>
+            <CardDescription>View and manage all customer orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[40px]">
+                      <Skeleton className="h-4 w-4" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-24" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-24" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead>
+                      <Skeleton className="h-4 w-20" />
+                    </TableHead>
+                    <TableHead className="text-right">
+                      <Skeleton className="h-4 w-16 ml-auto" />
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array(5)
+                    .fill(0)
+                    .map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <Skeleton className="h-4 w-4" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-24" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-8 w-32" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-4 w-20" />
+                        </TableCell>
+                        <TableCell>
+                          <Skeleton className="h-6 w-16" />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Skeleton className="h-8 w-16 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between pb-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
+            <p className="text-muted-foreground">Manage your event orders and payments</p>
+          </div>
+        </div>
+
+        <Card className="border-red-200 bg-red-50 dark:bg-red-900/10 dark:border-red-900/30">
+          <CardHeader>
+            <CardTitle className="text-red-700 dark:text-red-400 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Error Loading Orders
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -434,7 +560,7 @@ export default function OrdersPage() {
                             <div className="flex items-center gap-2">
                               <Avatar className="h-7 w-7">
                                 <AvatarImage
-                                  src={order.customer.avatar || "/placeholder.svg"}
+                                  src={order.customer.avatar || "/placeholder.svg?height=28&width=28"}
                                   alt={order.customer.name}
                                 />
                                 <AvatarFallback>{order.customer.name.substring(0, 2)}</AvatarFallback>
@@ -514,8 +640,18 @@ export default function OrdersPage() {
                                   )}
                                   {order.status === "pending" && (
                                     <>
-                                      <DropdownMenuItem className="text-green-600">Mark as Paid</DropdownMenuItem>
-                                      <DropdownMenuItem className="text-red-600">Cancel Order</DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-green-600"
+                                        onClick={() => handleMarkAsPaid(order.id)}
+                                      >
+                                        Mark as Paid
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() => handleCancelOrder(order.id)}
+                                      >
+                                        Cancel Order
+                                      </DropdownMenuItem>
                                     </>
                                   )}
                                 </DropdownMenuContent>
@@ -576,7 +712,7 @@ export default function OrdersPage() {
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-7 w-7">
                                   <AvatarImage
-                                    src={order.customer.avatar || "/placeholder.svg"}
+                                    src={order.customer.avatar || "/placeholder.svg?height=28&width=28"}
                                     alt={order.customer.name}
                                   />
                                   <AvatarFallback>{order.customer.name.substring(0, 2)}</AvatarFallback>
@@ -674,7 +810,7 @@ export default function OrdersPage() {
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-7 w-7">
                                   <AvatarImage
-                                    src={order.customer.avatar || "/placeholder.svg"}
+                                    src={order.customer.avatar || "/placeholder.svg?height=28&width=28"}
                                     alt={order.customer.name}
                                   />
                                   <AvatarFallback>{order.customer.name.substring(0, 2)}</AvatarFallback>
@@ -695,15 +831,33 @@ export default function OrdersPage() {
                             <TableCell>{order.amount.toLocaleString()} ETB</TableCell>
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8 gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 gap-1"
+                                  onClick={() => {
+                                    setSelectedOrder(order)
+                                    setIsRefunding(false)
+                                  }}
+                                >
                                   <Eye className="h-3 w-3" />
                                   View
                                 </Button>
-                                <Button variant="outline" size="sm" className="h-8 gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 gap-1"
+                                  onClick={() => handleMarkAsPaid(order.id)}
+                                >
                                   <Check className="h-3 w-3" />
                                   Mark Paid
                                 </Button>
-                                <Button variant="outline" size="sm" className="h-8 gap-1 text-red-600">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 gap-1 text-red-600"
+                                  onClick={() => handleCancelOrder(order.id)}
+                                >
                                   <X className="h-3 w-3" />
                                   Cancel
                                 </Button>
@@ -760,7 +914,7 @@ export default function OrdersPage() {
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-7 w-7">
                                   <AvatarImage
-                                    src={order.customer.avatar || "/placeholder.svg"}
+                                    src={order.customer.avatar || "/placeholder.svg?height=28&width=28"}
                                     alt={order.customer.name}
                                   />
                                   <AvatarFallback>{order.customer.name.substring(0, 2)}</AvatarFallback>
@@ -859,7 +1013,7 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-3 mb-3">
                       <Avatar>
                         <AvatarImage
-                          src={selectedOrder.customer.avatar || "/placeholder.svg"}
+                          src={selectedOrder.customer.avatar || "/placeholder.svg?height=40&width=40"}
                           alt={selectedOrder.customer.name}
                         />
                         <AvatarFallback>{selectedOrder.customer.name.substring(0, 2)}</AvatarFallback>
@@ -943,7 +1097,7 @@ export default function OrdersPage() {
                     <h4 className="text-sm font-medium">Refund Details</h4>
                     <div className="grid gap-2">
                       <Label htmlFor="refundReason">Reason for Refund</Label>
-                      <Select defaultValue="customerRequest">
+                      <Select defaultValue="customerRequest" id="refundReason">
                         <SelectTrigger>
                           <SelectValue placeholder="Select a reason" />
                         </SelectTrigger>
@@ -978,7 +1132,9 @@ export default function OrdersPage() {
                   <Button variant="outline" onClick={() => setIsRefunding(false)}>
                     Cancel
                   </Button>
-                  <Button variant="destructive">Process Refund</Button>
+                  <Button variant="destructive" onClick={handleProcessRefund}>
+                    Process Refund
+                  </Button>
                 </>
               ) : (
                 <>
@@ -989,7 +1145,7 @@ export default function OrdersPage() {
                       </Button>
                     )}
                   </div>
-                  <Button>Done</Button>
+                  <Button onClick={() => setSelectedOrder(null)}>Done</Button>
                 </>
               )}
             </DialogFooter>
@@ -1009,7 +1165,7 @@ export default function OrdersPage() {
               <Label htmlFor="exportFormat" className="text-right">
                 Format
               </Label>
-              <Select defaultValue="csv">
+              <Select defaultValue="csv" id="exportFormat">
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a format" />
                 </SelectTrigger>
@@ -1024,7 +1180,7 @@ export default function OrdersPage() {
               <Label htmlFor="dateRange" className="text-right">
                 Date Range
               </Label>
-              <Select defaultValue="all">
+              <Select defaultValue="all" id="dateRange">
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select date range" />
                 </SelectTrigger>
@@ -1104,7 +1260,9 @@ export default function OrdersPage() {
             <Button variant="outline" onClick={() => setExportModalOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit">Export</Button>
+            <Button type="submit" onClick={handleExportOrders}>
+              Export
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

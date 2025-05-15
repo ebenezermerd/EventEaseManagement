@@ -1,24 +1,17 @@
 "use client"
 
-import React, { useState } from "react"
+import type React from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/components/ui/use-toast"
 
 export default function RegisterPage() {
@@ -51,13 +44,13 @@ export default function RegisterPage() {
     region: "",
   })
 
-const [files, setFiles] = useState<{
-  logo: File | null;
-  verificationDocuments: File[];
-}>({
-  logo: null,
-  verificationDocuments: [],
-})
+  const [files, setFiles] = useState<{
+    logo: File | null
+    verificationDocuments: File[]
+  }>({
+    logo: null,
+    verificationDocuments: [],
+  })
 
   const handleAttendeeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -71,7 +64,7 @@ const [files, setFiles] = useState<{
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, files: fileList } = e.target
-    
+
     if (name === "logo" && fileList && fileList.length > 0) {
       setFiles((prev) => ({ ...prev, logo: fileList[0] }))
     } else if (name === "verificationDocuments" && fileList && fileList.length > 0) {
@@ -103,7 +96,7 @@ const [files, setFiles] = useState<{
 
   const validateOrganizerForm = () => {
     const { name, email, password, confirmPassword, companyName, tinNumber } = organizerFormData
-    
+
     if (!name || !email || !password || !companyName || !tinNumber) {
       toast({
         title: "Error",
@@ -112,7 +105,7 @@ const [files, setFiles] = useState<{
       })
       return false
     }
-    
+
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -121,7 +114,7 @@ const [files, setFiles] = useState<{
       })
       return false
     }
-    
+
     if (!files.verificationDocuments.length) {
       toast({
         title: "Error",
@@ -130,37 +123,41 @@ const [files, setFiles] = useState<{
       })
       return false
     }
-    
+
     return true
   }
 
+  // Update the handleAttendeeSubmit function to match the backend API
   const handleAttendeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateAttendeeForm()) return
-    
+
     setIsLoading(true)
     try {
-      // Replace with actual API endpoint
-      const response = await fetch("/api/auth/register", {
+      // Updated to use the correct API endpoint and data structure
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...attendeeFormData,
-          role: "attendee"
+          name: attendeeFormData.name,
+          email: attendeeFormData.email,
+          password: attendeeFormData.password,
+          phone: attendeeFormData.phone || "",
+          role: "attendee",
         }),
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Registration failed")
       }
-      
+
       toast({
         title: "Success",
-        description: "Account created successfully.",
+        description: "Account created successfully. Please check your email for verification.",
       })
-      
+
       // Redirect to login
       router.push("/login")
     } catch (error) {
@@ -175,53 +172,74 @@ const [files, setFiles] = useState<{
     }
   }
 
+  // Update the handleOrganizerSubmit function to match the backend API
   const handleOrganizerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateOrganizerForm()) return
-    
+
     setIsLoading(true)
     try {
-      // Create form data for multipart/form-data submission
+      // For organizer registration, we need to handle file uploads
       const formData = new FormData()
-      
-      // Add all text fields
-      Object.entries(organizerFormData).forEach(([key, value]) => {
-        if (key !== "confirmPassword") {
-          formData.append(key, value)
-        }
-      })
-      
-      // Add role
+
+      // Add basic user fields
+      formData.append("name", organizerFormData.name)
+      formData.append("email", organizerFormData.email)
+      formData.append("password", organizerFormData.password)
+      formData.append("phone", organizerFormData.phone || "")
       formData.append("role", "organizer")
-      
+
+      // Add organizer-specific fields
+      formData.append("companyName", organizerFormData.companyName)
+      formData.append("tinNumber", organizerFormData.tinNumber)
+
+      if (organizerFormData.description) {
+        formData.append("description", organizerFormData.description)
+      }
+
+      if (organizerFormData.website) {
+        formData.append("website", organizerFormData.website)
+      }
+
+      if (organizerFormData.address) {
+        formData.append("address", organizerFormData.address)
+      }
+
+      if (organizerFormData.region) {
+        formData.append("region", organizerFormData.region)
+      }
+
       // Add files
       if (files.logo) {
         formData.append("logo", files.logo)
       }
-      
-      files.verificationDocuments.forEach((file, index) => {
-        formData.append(`verificationDocuments`, file)
-      })
-      
-      // Replace with actual API endpoint
-      const response = await fetch("/api/organizers/apply", {
+
+      if (files.verificationDocuments.length > 0) {
+        // Append each verification document
+        files.verificationDocuments.forEach((file, index) => {
+          formData.append(`verificationDocuments`, file)
+        })
+      }
+
+      // Send the registration request
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/auth/register`, {
         method: "POST",
         body: formData,
       })
-      
+
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.message || "Registration failed")
       }
-      
+
       toast({
         title: "Success",
-        description: "Organizer application submitted successfully. Your account is under review.",
+        description: "Organizer application submitted successfully. Your account is pending approval.",
       })
-      
-      // Redirect to organizer dashboard (they'll see a pending status message)
-      router.push("/dashboard/organizer")
+
+      // Redirect to login
+      router.push("/login")
     } catch (error) {
       console.error("Registration error:", error)
       toast({
@@ -248,16 +266,14 @@ const [files, setFiles] = useState<{
             <TabsTrigger value="attendee">Attendee</TabsTrigger>
             <TabsTrigger value="organizer">Organizer</TabsTrigger>
           </TabsList>
-          
+
           {/* Attendee Registration Form */}
           <TabsContent value="attendee">
             <Card>
               <form onSubmit={handleAttendeeSubmit}>
                 <CardHeader>
                   <CardTitle>Register as an Attendee</CardTitle>
-                  <CardDescription>
-                    Create an account to discover and book events
-                  </CardDescription>
+                  <CardDescription>Create an account to discover and book events</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -271,7 +287,7 @@ const [files, setFiles] = useState<{
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="attendee-email">Email</Label>
                     <Input
@@ -284,9 +300,9 @@ const [files, setFiles] = useState<{
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label htmlFor="attendee-phone">Phone (Optional)</Label>
+                    <Label htmlFor="attendee-phone">Phone Number</Label>
                     <Input
                       id="attendee-phone"
                       name="phone"
@@ -294,9 +310,10 @@ const [files, setFiles] = useState<{
                       placeholder="+251 91 234 5678"
                       value={attendeeFormData.phone}
                       onChange={handleAttendeeInputChange}
+                      required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="attendee-password">Password</Label>
                     <div className="relative">
@@ -316,18 +333,12 @@ const [files, setFiles] = useState<{
                         className="absolute right-2 top-1/2 -translate-y-1/2"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? (
-                          <EyeOffIcon className="h-4 w-4" />
-                        ) : (
-                          <EyeIcon className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">
-                          {showPassword ? "Hide password" : "Show password"}
-                        </span>
+                        {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                        <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="attendee-confirm-password">Confirm Password</Label>
                     <Input
@@ -356,16 +367,14 @@ const [files, setFiles] = useState<{
               </form>
             </Card>
           </TabsContent>
-          
+
           {/* Organizer Registration Form */}
           <TabsContent value="organizer">
             <Card>
               <form onSubmit={handleOrganizerSubmit}>
                 <CardHeader>
                   <CardTitle>Apply as an Organizer</CardTitle>
-                  <CardDescription>
-                    Create an organizer account to host and manage events
-                  </CardDescription>
+                  <CardDescription>Create an organizer account to host and manage events</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="grid gap-4 md:grid-cols-2">
@@ -380,7 +389,7 @@ const [files, setFiles] = useState<{
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-company">Company/Organization Name</Label>
                       <Input
@@ -392,7 +401,7 @@ const [files, setFiles] = useState<{
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-email">Email</Label>
                       <Input
@@ -405,7 +414,7 @@ const [files, setFiles] = useState<{
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-phone">Phone</Label>
                       <Input
@@ -418,7 +427,7 @@ const [files, setFiles] = useState<{
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-website">Website (Optional)</Label>
                       <Input
@@ -430,7 +439,7 @@ const [files, setFiles] = useState<{
                         onChange={handleOrganizerInputChange}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-tin">TIN Number</Label>
                       <Input
@@ -442,7 +451,7 @@ const [files, setFiles] = useState<{
                         required
                       />
                     </div>
-                    
+
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="organizer-address">Address</Label>
                       <Input
@@ -453,7 +462,7 @@ const [files, setFiles] = useState<{
                         onChange={handleOrganizerInputChange}
                       />
                     </div>
-                    
+
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="organizer-region">Region/City</Label>
                       <Input
@@ -464,7 +473,7 @@ const [files, setFiles] = useState<{
                         onChange={handleOrganizerInputChange}
                       />
                     </div>
-                    
+
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="organizer-description">Company Description</Label>
                       <Textarea
@@ -476,21 +485,13 @@ const [files, setFiles] = useState<{
                         rows={3}
                       />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-logo">Company Logo (Optional)</Label>
-                      <Input
-                        id="organizer-logo"
-                        name="logo"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Recommended: Square image (1:1 ratio), max 2MB
-                      </p>
+                      <Input id="organizer-logo" name="logo" type="file" accept="image/*" onChange={handleFileChange} />
+                      <p className="text-xs text-muted-foreground">Recommended: Square image (1:1 ratio), max 2MB</p>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-documents">Verification Documents</Label>
                       <Input
@@ -506,7 +507,7 @@ const [files, setFiles] = useState<{
                         Business registration, license, or other verification documents. PDF or images, max 5MB each.
                       </p>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-password">Password</Label>
                       <div className="relative">
@@ -526,18 +527,12 @@ const [files, setFiles] = useState<{
                           className="absolute right-2 top-1/2 -translate-y-1/2"
                           onClick={() => setShowPassword(!showPassword)}
                         >
-                          {showPassword ? (
-                            <EyeOffIcon className="h-4 w-4" />
-                          ) : (
-                            <EyeIcon className="h-4 w-4" />
-                          )}
-                          <span className="sr-only">
-                            {showPassword ? "Hide password" : "Show password"}
-                          </span>
+                          {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                          <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                         </Button>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-confirm-password">Confirm Password</Label>
                       <Input

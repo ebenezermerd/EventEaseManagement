@@ -6,15 +6,14 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
-       {/* Hero Section - Enhanced with better dark mode support */}
-       <section className="relative w-full overflow-hidden py-24 md:py-36">
+        {/* Hero Section - Enhanced with better dark mode support */}
+        <section className="relative w-full overflow-hidden py-24 md:py-36">
           {/* Background gradient - optimized for dark mode */}
           <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--hero-bg-from))] via-[hsl(var(--hero-bg-via))] to-[hsl(var(--hero-bg-to))] opacity-95 -z-10"></div>
 

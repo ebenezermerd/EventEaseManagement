@@ -292,7 +292,10 @@ export function EventManageModal({ event, open, onOpenChange }: EventManageModal
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="attendees" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="attendees"
+              className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
               <ScrollArea className="flex-1 p-6 h-[calc(90vh-12rem)]">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
@@ -356,7 +359,10 @@ export function EventManageModal({ event, open, onOpenChange }: EventManageModal
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="promotions" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="promotions"
+              className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
               <ScrollArea className="flex-1 p-6 h-[calc(90vh-12rem)]">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">
@@ -487,7 +493,10 @@ export function EventManageModal({ event, open, onOpenChange }: EventManageModal
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="communications" className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col">
+            <TabsContent
+              value="communications"
+              className="mt-0 h-full data-[state=active]:flex data-[state=active]:flex-col"
+            >
               <ScrollArea className="flex-1 p-6 h-[calc(90vh-12rem)]">
                 <div className="space-y-6">
                   <div className="flex justify-between items-center">

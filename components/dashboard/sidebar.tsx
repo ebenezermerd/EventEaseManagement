@@ -64,20 +64,16 @@ export function DashboardSidebar({
   }, [pathname])
 
   const isActive = (href: string) => {
+    // Exact match is always active
     if (pathname === href) return true
     
-    // For nested routes, only mark parent active if we're in that specific section
-    // but not if there's a more specific match
-    if (href === "/dashboard" && pathname?.startsWith("/dashboard/")) {
-      // Don't mark dashboard active if we're in a subsection
+    // Special handling for dashboard root to prevent it from being active in subsections
+    if (href === "/dashboard") {
       return pathname === "/dashboard"
     }
     
-    // For specific routes, check exact match or immediate children
-    if (pathname?.startsWith(href + "/")) {
-      return true
-    }
-    
+    // For all other routes, only mark active if this is an exact match
+    // This prevents parent routes from staying active when child routes are selected
     return false
   }
 

@@ -1,10 +1,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Plus, Search, Filter } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Calendar, Plus, Search, Filter, Users, DollarSign } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { mockEvents, getEventsByOrganizer } from "@/lib/mock-data"
 
 export default function EventsPage() {
+  // In a real app, this would come from the logged-in user's organizer ID
+  const organizerId = 'org_001'
+  const organizerEvents = getEventsByOrganizer(organizerId)
+  
+  // Fallback to mock events if no organizer events found
+  const events = organizerEvents.length > 0 ? organizerEvents : mockEvents.slice(0, 6)
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -31,32 +40,51 @@ export default function EventsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <div className="h-48 bg-muted">
+        {events.map((event) => (
+          <Card key={event.id} className="overflow-hidden">
+            <div className="h-48 bg-muted relative">
               <img
-                src={`/placeholder.svg?height=200&width=400&text=Event+${i}`}
-                alt={`Event ${i}`}
+                src={event.image}
+                alt={event.title}
                 className="w-full h-full object-cover"
               />
+              <Badge className="absolute top-3 right-3" variant={
+                event.status === 'published' ? 'default' : 
+                event.status === 'draft' ? 'secondary' : 
+                'destructive'
+              }>
+                {event.status}
+              </Badge>
             </div>
             <CardHeader>
-              <CardTitle>Event {i}</CardTitle>
+              <CardTitle className="line-clamp-1">{event.title}</CardTitle>
               <CardDescription>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>May {10 + i}, 2024</span>
+                  <span>{event.eventDate}</span>
                 </div>
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex justify-between">
-                <Link href={`/dashboard/organizer/events/${i}`}>
-                <Button variant="outline" size="sm">
-                  View Details
-                </Button>
+              <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    <span>{event.attendees} attendees</span>
+                  </div>
+                  <div className="flex items-center">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    <span className="font-medium">ETB {event.revenue.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-between gap-2">
+                <Link href={`/dashboard/organizer/events/${event.id}`} className="flex-1">
+                  <Button variant="outline" size="sm" className="w-full">
+                    View Details
+                  </Button>
                 </Link>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="flex-1">
                   Manage
                 </Button>
               </div>

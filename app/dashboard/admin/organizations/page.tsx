@@ -29,18 +29,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-
-interface Organization {
-  id: string
-  name: string
-  contactPerson: string
-  email: string
-  phone: string
-  tinNumber: string
-  status: "approved" | "pending" | "rejected"
-  registrationDate: string
-  logo?: string
-}
+import { mockOrganizations, type Organization } from "@/lib/mock-data"
 
 export default function AdminOrganizationsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -48,86 +37,8 @@ export default function AdminOrganizationsPage() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null)
   const [viewDocuments, setViewDocuments] = useState(false)
 
-  // Sample data for organizations
-  const organizations: Organization[] = [
-    {
-      id: "ORG001",
-      name: "Tech Association",
-      contactPerson: "Sara Mohammed",
-      email: "contact@techassociation.com",
-      phone: "+251 91 234 5678",
-      tinNumber: "0012345678",
-      status: "approved",
-      registrationDate: "Feb 3, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=TA",
-    },
-    {
-      id: "ORG002",
-      name: "Coffee Exporters",
-      contactPerson: "Yonas Haile",
-      email: "info@coffeeexporters.com",
-      phone: "+251 92 345 6789",
-      tinNumber: "0023456789",
-      status: "approved",
-      registrationDate: "Apr 12, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=CE",
-    },
-    {
-      id: "ORG003",
-      name: "National Museum",
-      contactPerson: "Dawit Mekonnen",
-      email: "info@nationalmuseum.org",
-      phone: "+251 93 456 7890",
-      tinNumber: "0034567890",
-      status: "approved",
-      registrationDate: "Mar 8, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=NM",
-    },
-    {
-      id: "ORG004",
-      name: "Addis Chamber",
-      contactPerson: "Meron Tadesse",
-      email: "info@addischamber.org",
-      phone: "+251 94 567 8901",
-      tinNumber: "0045678901",
-      status: "approved",
-      registrationDate: "Jan 25, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=AC",
-    },
-    {
-      id: "ORG005",
-      name: "iceaddis",
-      contactPerson: "Bereket Solomon",
-      email: "hello@iceaddis.org",
-      phone: "+251 95 678 9012",
-      tinNumber: "0056789012",
-      status: "pending",
-      registrationDate: "Apr 5, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=IA",
-    },
-    {
-      id: "ORG006",
-      name: "Abyssinia Events",
-      contactPerson: "Abebe Kebede",
-      email: "info@abyssiniaevents.com",
-      phone: "+251 96 789 0123",
-      tinNumber: "0067890123",
-      status: "pending",
-      registrationDate: "May 10, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=AE",
-    },
-    {
-      id: "ORG007",
-      name: "Habesha Promotions",
-      contactPerson: "Tigist Alemu",
-      email: "contact@habeshapromotions.com",
-      phone: "+251 97 890 1234",
-      tinNumber: "0078901234",
-      status: "rejected",
-      registrationDate: "May 8, 2024",
-      logo: "/placeholder.svg?height=40&width=40&text=HP",
-    },
-  ]
+  // Use centralized mock data for organizations
+  const organizations = mockOrganizations
 
   // Filter organizations based on search term and status
   const filteredOrganizations = organizations.filter((org) => {

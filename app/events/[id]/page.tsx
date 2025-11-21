@@ -56,16 +56,16 @@ const events = [
     category: "Technology",
     attendees: 320,
     maxAttendees: 500,
-    image: "/placeholder.svg?height=600&width=1200&text=Addis+Tech+Summit",
+    image: "/assets/image (26).jpg?height=600&width=1200&text=Addis+Tech+Summit",
     gallery: [
-      "/placeholder.svg?height=400&width=600&text=Tech+Summit+1",
-      "/placeholder.svg?height=400&width=600&text=Tech+Summit+2",
-      "/placeholder.svg?height=400&width=600&text=Tech+Summit+3",
-      "/placeholder.svg?height=400&width=600&text=Tech+Summit+4",
+      "/assets/image (27).jpg?height=400&width=600&text=Tech+Summit+1",
+      "/assets/image (28).jpg?height=400&width=600&text=Tech+Summit+2",
+      "/assets/image (29).jpg?height=400&width=600&text=Tech+Summit+3",
+      "/assets/image (30).jpg?height=400&width=600&text=Tech+Summit+4",
     ],
     organizer: {
       name: "TechEthiopia",
-      logo: "/placeholder.svg?height=100&width=100&text=TechEthiopia",
+      logo: "/assets/image (32).jpg?height=100&width=100&text=TechEthiopia",
       description:
         "TechEthiopia is a leading technology community dedicated to advancing Ethiopia's tech ecosystem through events, training, and networking opportunities.",
       events: 15,
@@ -192,7 +192,7 @@ const relatedEvents = [
     price: "ETB 250",
     category: "Business",
     attendees: 120,
-    image: "/placeholder.svg?height=300&width=500&text=Startup+Pitch",
+    image: "/assets/image (35).jpg?height=300&width=500&text=Startup+Pitch",
   },
   {
     id: 12,
@@ -203,7 +203,7 @@ const relatedEvents = [
     price: "ETB 100",
     category: "Technology",
     attendees: 150,
-    image: "/placeholder.svg?height=300&width=500&text=Hackathon",
+    image: "/assets/image (37).jpg?height=300&width=500&text=Hackathon",
   },
   {
     id: 14,
@@ -214,7 +214,7 @@ const relatedEvents = [
     price: "ETB 800",
     category: "Business",
     attendees: 220,
-    image: "/placeholder.svg?height=300&width=500&text=Marketing+Conference",
+    image: "/assets/image (38).jpg?height=300&width=500&text=Marketing+Conference",
   },
 ]
 
@@ -237,7 +237,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
       <main className="min-h-screen">
         {/* Hero Section */}
         <div className="relative h-[40vh] md:h-[50vh] lg:h-[60vh] w-full overflow-hidden">
-          <Image src={event.image || "/placeholder.svg"} alt={event.title} fill className="object-cover" priority />
+          <Image src={event.image || "/assets/image (40).jpg"} alt={event.title} fill className="object-cover" priority />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
             <div className="container">
@@ -308,7 +308,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                       {event.gallery.map((image, index) => (
                         <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
                           <Image
-                            src={image || "/placeholder.svg"}
+                            src={image || "/assets/image (41).jpg"}
                             alt={`${event.title} gallery image ${index + 1}`}
                             fill
                             className="object-cover hover:scale-105 transition-transform duration-300"
@@ -464,7 +464,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <div className="flex items-center gap-4 mb-4">
                     <div className="h-16 w-16 relative rounded-lg overflow-hidden">
                       <Image
-                        src={event.organizer.logo || "/placeholder.svg"}
+                        src={event.organizer.logo || "/assets/image (42).jpg"}
                         alt={event.organizer.name}
                         fill
                         className="object-cover"
@@ -550,7 +550,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                             <div className="flex gap-4">
                               <div className="h-16 w-16 relative rounded-lg overflow-hidden shrink-0">
                                 <Image
-                                  src={otherEvent.image || "/placeholder.svg"}
+                                  src={otherEvent.image || "/assets/image (43).jpg"}
                                   alt={otherEvent.title}
                                   fill
                                   className="object-cover"
@@ -591,7 +591,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <Card className="group overflow-hidden border hover:border-primary/20 transition-colors">
                     <div className="aspect-[16/9] relative overflow-hidden">
                       <Image
-                        src={relEvent.image || "/placeholder.svg"}
+                        src={relEvent.image || "/assets/image (44).jpg"}
                         alt={relEvent.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"

@@ -14,13 +14,13 @@ export default function Home() {
       <SiteHeader />
       <main className="flex-1">
         {/* Hero Section - Next Level Advanced UI/UX */}
-        <section className="relative w-full overflow-hidden py-20 md:py-32 lg:py-40">
+        <section className="relative w-full overflow-hidden py-20 md:py-32 lg:py-40 h-screen">
           {/* Animated Gradient Mesh Background */}
           <div className="absolute inset-0 -z-20">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-indigo-950/20"></div>
             
             {/* Animated Mesh Gradient Orbs */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-screen overflow-visible">
               <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-purple-400/30 via-pink-400/20 to-transparent dark:from-purple-600/20 dark:via-pink-600/10 blur-3xl animate-pulse-slow"></div>
               <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-cyan-400/25 via-blue-400/15 to-transparent dark:from-cyan-600/15 dark:via-blue-600/10 blur-3xl animate-pulse-slower"></div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-indigo-400/20 via-violet-400/10 to-transparent dark:from-indigo-600/10 dark:via-violet-600/5 blur-3xl animate-pulse-medium"></div>
@@ -54,30 +54,30 @@ export default function Home() {
             <div className="relative h-[650px] perspective-1000">
               {/* First Circle - Top Left */}
               <div className="absolute top-[-40px] right-[15%] w-72 h-72 group">
-                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:rotate-3 animate-float-slow">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-70000 hover:scale-110 hover:rotate-3 animate-float-slow">
                   <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/40 via-blue-500/30 to-transparent dark:from-cyan-500/30 dark:via-blue-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/60 dark:border-white/30 shadow-inner backdrop-blur-sm">
                     <Image
-                      src="/placeholder.svg?height=300&width=300&text=Conference"
+                      src="/assets/image (8).jpg?height=300&width=300&text=Conference"
                       alt="Event Speaker"
                       fill
                       className="object-cover transition-transform duration-1000 group-hover:scale-125"
                       priority
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                   </div>
                 </div>
               </div>
 
               {/* Second Circle - Center */}
               <div className="absolute top-[100px] right-[8%] w-96 h-96 group z-20">
-                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:-rotate-2 animate-float-medium">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-70000 hover:scale-110 hover:-rotate-2 animate-float-medium">
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-500/50 via-pink-500/30 to-transparent dark:from-purple-500/30 dark:via-pink-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/70 dark:border-white/40 shadow-inner backdrop-blur-sm">
                     <Image
-                      src="/placeholder.svg?height=400&width=400&text=Music+Event"
+                      src="/assets/hero-first.jpg?height=400&width=400&text=Music+Event"
                       alt="Music Event"
                       fill
                       className="object-cover transition-transform duration-1000 group-hover:scale-125"
@@ -89,13 +89,13 @@ export default function Home() {
               </div>
 
               {/* Third Circle - Bottom Right */}
-              <div className="absolute top-[290px] right-[18%] w-64 h-64 group">
-                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:rotate-6 animate-float-fast">
+              <div className="absolute top-[350px] right-[18%] w-64 h-64 group">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-70000 hover:scale-110 hover:rotate-6 animate-float-fast">
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-violet-500/30 to-transparent dark:from-indigo-500/30 dark:via-violet-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/60 dark:border-white/30 shadow-inner backdrop-blur-sm">
                     <Image
-                      src="/placeholder.svg?height=250&width=250&text=Workshop"
+                      src="/assets/image (11).jpg?height=250&width=250&text=Workshop"
                       alt="Workshop"
                       fill
                       className="object-cover transition-transform duration-1000 group-hover:scale-125"
@@ -216,7 +216,7 @@ export default function Home() {
                     ))}
                   </div>
                   <div className="text-sm">
-                    <p className="font-bold text-gray-900 dark:text-white">10,000+ Active Users</p>
+                    <p className="font-bold text-gray-900 dark:text-white">4,000+ Active Users</p>
                     <p className="text-gray-600 dark:text-gray-400">Join the community</p>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ export default function Home() {
                   time: "9:00 AM",
                   location: "Millennium Hall, Addis Ababa",
                   category: "Technology",
-                  image: "/placeholder.svg?height=300&width=500&text=Addis+Tech+Summit",
+                  image: "/assets/image (15).jpg?height=300&width=500&text=Addis+Tech+Summit",
                 },
                 {
                   id: 2,
@@ -266,7 +266,7 @@ export default function Home() {
                   time: "10:00 AM",
                   location: "Friendship Park, Addis Ababa",
                   category: "Cultural",
-                  image: "/placeholder.svg?height=300&width=500&text=Coffee+Festival",
+                  image: "/assets/image (16).jpg?height=300&width=500&text=Coffee+Festival",
                 },
                 {
                   id: 3,
@@ -275,7 +275,7 @@ export default function Home() {
                   time: "2:00 PM",
                   location: "National Museum, Addis Ababa",
                   category: "Cultural",
-                  image: "/placeholder.svg?height=300&width=500&text=Cultural+Exhibition",
+                  image: "/assets/image (18).jpg?height=300&width=500&text=Cultural+Exhibition",
                 },
               ].map((event, index) => (
                 <div
@@ -284,7 +284,7 @@ export default function Home() {
                 >
                   <div className="aspect-[16/9] relative overflow-hidden">
                     <Image
-                      src={event.image || "/placeholder.svg"}
+                      src={event.image || "/assets/image (22).jpg"}
                       alt={event.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

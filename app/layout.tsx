@@ -9,10 +9,19 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EventEase - Event Management Platform for Ethiopia",
+  title: "EventEase | Event Management Platform for Ethiopia",
   description:
     "A mobile-first event management platform for discovering, creating, and attending events across Ethiopia.",
   generator: "EventEase",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.ico", sizes: "16x16", type: "image/x-icon" },
+      { url: "/favicon.ico", sizes: "32x32", type: "image/x-icon" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 }
 
 export default function RootLayout({

@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
+  CalendarClock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -63,7 +64,21 @@ export function DashboardSidebar({
   }, [pathname])
 
   const isActive = (href: string) => {
-    return pathname === href || pathname?.startsWith(href)
+    if (pathname === href) return true
+    
+    // For nested routes, only mark parent active if we're in that specific section
+    // but not if there's a more specific match
+    if (href === "/dashboard" && pathname?.startsWith("/dashboard/")) {
+      // Don't mark dashboard active if we're in a subsection
+      return pathname === "/dashboard"
+    }
+    
+    // For specific routes, check exact match or immediate children
+    if (pathname?.startsWith(href + "/")) {
+      return true
+    }
+    
+    return false
   }
 
   function handleNavigation() {
@@ -138,15 +153,19 @@ export function DashboardSidebar({
         <div className="h-full flex flex-col">
           <div className={cn("h-16 px-4 flex items-center border-b justify-between")}>
             {!collapsed && (
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center overflow-hidden">
                 <Logo />
-                <span className="text-lg font-semibold truncate">EventEase</span>
+              </div>
+            )}
+            {collapsed && (
+              <div className="flex items-center justify-center w-full">
+                <CalendarClock className="h-6 w-6 text-primary-600" />
               </div>
             )}
             <Button
               variant="ghost"
               size="icon"
-              className={cn("ml-auto", collapsed && "mx-auto")}
+              className={cn(!collapsed && "ml-auto")}
               onClick={toggleSidebar}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >

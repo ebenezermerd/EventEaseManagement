@@ -113,6 +113,38 @@ const config = {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-20px)" },
+        },
+        "float-medium": {
+          "0%, 100%": { transform: "translateY(0) translateX(0)" },
+          "50%": { transform: "translateY(-15px) translateX(5px)" },
+        },
+        "float-fast": {
+          "0%, 100%": { transform: "translateY(0) translateX(0)" },
+          "50%": { transform: "translateY(-10px) translateX(-5px)" },
+        },
+        "pulse-slow": {
+          "0%, 100%": { opacity: "0.3", transform: "scale(1)" },
+          "50%": { opacity: "0.5", transform: "scale(1.05)" },
+        },
+        "pulse-slower": {
+          "0%, 100%": { opacity: "0.2", transform: "scale(1)" },
+          "50%": { opacity: "0.4", transform: "scale(1.03)" },
+        },
+        "pulse-medium": {
+          "0%, 100%": { opacity: "0.25", transform: "scale(1)" },
+          "50%": { opacity: "0.45", transform: "scale(1.04)" },
+        },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "shimmer-slow": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -122,6 +154,18 @@ const config = {
         "bounce-subtle": "bounce-subtle 2s ease-in-out infinite",
         "scale-in": "scale-in 0.2s ease-out",
         shimmer: "shimmer 2s infinite linear",
+        "float-slow": "float-slow 6s ease-in-out infinite",
+        "float-medium": "float-medium 5s ease-in-out infinite",
+        "float-fast": "float-fast 4s ease-in-out infinite",
+        "float-slower": "float-slow 8s ease-in-out infinite",
+        "pulse-slow": "pulse-slow 6s ease-in-out infinite",
+        "pulse-slower": "pulse-slower 8s ease-in-out infinite",
+        "pulse-medium": "pulse-medium 5s ease-in-out infinite",
+        "gradient-x": "gradient-x 3s ease infinite",
+        "shimmer-slow": "shimmer-slow 3s linear infinite",
+      },
+      backgroundSize: {
+        "200%": "200% 200%",
       },
     },
   },

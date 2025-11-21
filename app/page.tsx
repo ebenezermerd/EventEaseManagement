@@ -13,143 +13,226 @@ export default function Home() {
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
       <main className="flex-1">
-       {/* Hero Section - Enhanced with better dark mode support */}
-       <section className="relative w-full overflow-hidden py-24 md:py-36">
-          {/* Background gradient - optimized for dark mode */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(var(--hero-bg-from))] via-[hsl(var(--hero-bg-via))] to-[hsl(var(--hero-bg-to))] opacity-95 -z-10"></div>
+        {/* Hero Section - Next Level Advanced UI/UX */}
+        <section className="relative w-full overflow-hidden py-20 md:py-32 lg:py-40">
+          {/* Animated Gradient Mesh Background */}
+          <div className="absolute inset-0 -z-20">
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-indigo-950/20"></div>
+            
+            {/* Animated Mesh Gradient Orbs */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
+              <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-purple-400/30 via-pink-400/20 to-transparent dark:from-purple-600/20 dark:via-pink-600/10 blur-3xl animate-pulse-slow"></div>
+              <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-cyan-400/25 via-blue-400/15 to-transparent dark:from-cyan-600/15 dark:via-blue-600/10 blur-3xl animate-pulse-slower"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-gradient-to-br from-indigo-400/20 via-violet-400/10 to-transparent dark:from-indigo-600/10 dark:via-violet-600/5 blur-3xl animate-pulse-medium"></div>
+            </div>
 
-          {/* Geometric background patterns */}
-          <div className="absolute inset-0 -z-10 opacity-10">
-            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
-                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#smallGrid)" />
-            </svg>
+            {/* Grid Pattern Overlay */}
+            <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05]">
+              <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+            </div>
           </div>
 
-          {/* Decorative circles with improved glow effects */}
-          <div className="absolute top-0 right-0 w-full h-full overflow-hidden -z-5">
-            <div className="absolute top-[10%] right-[5%] w-72 h-72 rounded-full bg-gradient-to-br from-secondary/40 to-purple-300/10 dark:from-secondary/20 dark:to-purple-600/10 blur-2xl animate-pulse-slow"></div>
-            <div className="absolute bottom-[20%] left-[10%] w-40 h-40 rounded-full bg-gradient-to-tr from-primary-300/20 to-cyan-300/10 dark:from-primary-300/10 dark:to-cyan-500/10 blur-2xl opacity-70"></div>
-            <div className="absolute top-[40%] right-[-5%] w-60 h-60 rounded-full bg-gradient-to-bl from-primary-400/20 to-secondary/10 dark:from-primary-400/10 dark:to-secondary/5 blur-xl"></div>
+          {/* Floating Particles Effect */}
+          <div className="absolute inset-0 -z-10 overflow-hidden">
+            <div className="absolute top-[15%] left-[10%] w-3 h-3 bg-purple-500/40 rounded-full blur-sm animate-float-slow"></div>
+            <div className="absolute top-[25%] right-[15%] w-2 h-2 bg-cyan-500/40 rounded-full blur-sm animate-float-fast"></div>
+            <div className="absolute top-[45%] left-[20%] w-4 h-4 bg-pink-500/30 rounded-full blur-sm animate-float-medium"></div>
+            <div className="absolute top-[60%] right-[25%] w-3 h-3 bg-indigo-500/40 rounded-full blur-sm animate-float-slower"></div>
+            <div className="absolute top-[70%] left-[40%] w-2 h-2 bg-violet-500/40 rounded-full blur-sm animate-float-slow"></div>
+            <div className="absolute top-[35%] right-[35%] w-3 h-3 bg-blue-500/30 rounded-full blur-sm animate-float-fast"></div>
           </div>
 
-          {/* Circular images on right - enhanced with more sophisticated styling */}
-          <div className="absolute right-[5%] top-1/2 -translate-y-1/2 hidden lg:block z-10 w-[40%] max-w-[500px]">
-            <div className="relative h-[600px]">
-              <div className="absolute top-[-60px] right-[10%] w-64 h-64 rounded-full shadow-xl overflow-hidden animate-float-slow">
-                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/30 to-transparent dark:from-cyan-500/20 rounded-full p-1.5">
-                  <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/40 dark:border-white/20 shadow-inner">
+          {/* 3D Event Images with Advanced Styling */}
+          <div className="absolute right-[2%] top-1/2 -translate-y-1/2 hidden xl:block z-10 w-[45%] max-w-[550px]">
+            <div className="relative h-[650px] perspective-1000">
+              {/* First Circle - Top Left */}
+              <div className="absolute top-[-40px] right-[15%] w-72 h-72 group">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:rotate-3 animate-float-slow">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/40 via-blue-500/30 to-transparent dark:from-cyan-500/30 dark:via-blue-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/60 dark:border-white/30 shadow-inner backdrop-blur-sm">
                     <Image
                       src="/placeholder.svg?height=300&width=300&text=Conference"
                       alt="Event Speaker"
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-700"
+                      className="object-cover transition-transform duration-1000 group-hover:scale-125"
                       priority
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   </div>
                 </div>
               </div>
-              <div className="absolute top-[80px] right-[5%] w-80 h-80 rounded-full shadow-xl overflow-hidden animate-float-medium z-20">
-                <div className="absolute inset-0 bg-gradient-to-tr from-secondary/50 to-transparent dark:from-secondary/30 rounded-full p-1.5">
-                  <div className="h-full w-full rounded-full overflow-hidden border-3 border-white/40 dark:border-white/20 shadow-inner">
+
+              {/* Second Circle - Center */}
+              <div className="absolute top-[100px] right-[8%] w-96 h-96 group z-20">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:-rotate-2 animate-float-medium">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/50 via-pink-500/30 to-transparent dark:from-purple-500/30 dark:via-pink-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/70 dark:border-white/40 shadow-inner backdrop-blur-sm">
                     <Image
-                      src="/placeholder.svg?height=350&width=350&text=Music+Event"
-                      alt="Conference"
+                      src="/placeholder.svg?height=400&width=400&text=Music+Event"
+                      alt="Music Event"
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-700"
+                      className="object-cover transition-transform duration-1000 group-hover:scale-125"
                       priority
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   </div>
                 </div>
               </div>
-              <div className="absolute top-[260px] right-[15%] w-56 h-56 rounded-full shadow-xl overflow-hidden animate-float-fast">
-                <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/30 to-transparent dark:from-blue-500/20 rounded-full p-1.5">
-                  <div className="h-full w-full rounded-full overflow-hidden border-2 border-white/40 dark:border-white/20 shadow-inner">
+
+              {/* Third Circle - Bottom Right */}
+              <div className="absolute top-[290px] right-[18%] w-64 h-64 group">
+                <div className="relative w-full h-full rounded-full shadow-2xl overflow-hidden transform transition-all duration-700 hover:scale-110 hover:rotate-6 animate-float-fast">
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-violet-500/30 to-transparent dark:from-indigo-500/30 dark:via-violet-500/20 rounded-full blur-sm group-hover:blur-md transition-all"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <div className="relative h-full w-full rounded-full overflow-hidden border-4 border-white/60 dark:border-white/30 shadow-inner backdrop-blur-sm">
                     <Image
                       src="/placeholder.svg?height=250&width=250&text=Workshop"
-                      alt="Attendees"
+                      alt="Workshop"
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-700"
+                      className="object-cover transition-transform duration-1000 group-hover:scale-125"
                       priority
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="container px-4 md:px-6 relative z-10 min-h-[800px]">
-            <div className="max-w-3xl">
-              <p className="text-lg md:text-xl font-medium mb-3 text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-blue-500 dark:from-cyan-400 dark:to-blue-300 inline-block animate-shimmer-slow">
-                Find Your Next Experience
-              </p>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-[hsl(var(--hero-text))] mb-6 leading-tight tracking-tight [text-shadow:0_2px_10px_rgba(0,0,0,0.1)] dark:[text-shadow:0_2px_10px_rgba(0,0,0,0.3)]">
-                Discover & Promote
-                <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400 dark:from-primary-400 dark:to-primary-300">
-                  Upcoming Events
+          <div className="container px-4 md:px-6 lg:px-8 relative z-10">
+            <div className="max-w-3xl xl:max-w-4xl">
+              {/* Badge with shimmer effect */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 border border-purple-200/50 dark:border-purple-700/50 mb-6 backdrop-blur-sm animate-shimmer-slow">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
+                </span>
+                <span className="text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                  Discover Amazing Events
+                </span>
+              </div>
+
+              {/* Main Headline with Advanced Typography */}
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-8 leading-[1.1] tracking-tight">
+                <span className="block text-gray-900 dark:text-white drop-shadow-sm">
+                  Find Your Next
+                </span>
+                <span className="block mt-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 dark:from-purple-400 dark:via-pink-400 dark:to-indigo-400 animate-gradient-x">
+                  Experience
                 </span>
               </h1>
-              <p className="text-lg md:text-xl text-[hsl(var(--hero-muted-text))] max-w-xl mb-10 leading-relaxed">
-                Find and attend the best events in Ethiopia or create your own with our powerful platform.
+
+              {/* Subtitle with better readability */}
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-2xl mb-12 leading-relaxed font-medium">
+                Discover and attend the best events in Ethiopia. From tech summits to cultural festivals, find what excites you.
               </p>
 
-              {/* Search bar - enhanced with better dark mode support and improved padding */}
-              <div className="mt-10 bg-[hsl(var(--hero-card-bg))] dark:bg-[hsl(var(--hero-card-bg))] backdrop-blur-sm p-0 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex flex-col md:flex-row transition-all duration-300 hover:shadow-[0_8px_30px_rgba(99,67,143,0.3)] border border-[hsl(var(--hero-card-border))] dark:border-[hsl(var(--hero-card-border))]">
-                <div className="flex-1 flex items-center px-4 py-3 border-b md:border-b-0 md:border-r border-[hsl(var(--hero-card-border))]">
-                  <Search className="h-5 w-5 text-primary flex-shrink-0 mr-3" />
-                  <input
-                    placeholder="Search Event"
-                    className="w-full hero-input border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0 h-auto"
-                  />
+              {/* Advanced Search Bar with Glass Morphism */}
+              <div className="relative group">
+                {/* Glow effect on hover */}
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition duration-500"></div>
+                
+                <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-purple-500/10 dark:hover:shadow-purple-500/20">
+                  <div className="flex flex-col md:flex-row">
+                    {/* Search Input */}
+                    <div className="flex-1 flex items-center px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50 group/search">
+                      <Search className="h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mr-3 transition-transform group-hover/search:scale-110" />
+                      <input
+                        placeholder="Search events..."
+                        className="w-full bg-transparent border-0 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-0 text-base font-medium"
+                      />
+                    </div>
+
+                    {/* Location Select */}
+                    <div className="md:w-[200px] px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50">
+                      <Select>
+                        <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto w-full">
+                          <div className="flex items-center">
+                            <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3 flex-shrink-0" />
+                            <SelectValue placeholder="Location" className="text-gray-900 dark:text-white" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl rounded-xl">
+                          <SelectItem value="addis">Addis Ababa</SelectItem>
+                          <SelectItem value="hawassa">Hawassa</SelectItem>
+                          <SelectItem value="bahirdar">Bahir Dar</SelectItem>
+                          <SelectItem value="mekele">Mekele</SelectItem>
+                          <SelectItem value="other">Other Locations</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Category Select */}
+                    <div className="md:w-[200px] px-6 py-5 border-b md:border-b-0 border-gray-200/50 dark:border-gray-700/50">
+                      <Select>
+                        <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto w-full">
+                          <div className="flex items-center">
+                            <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3 flex-shrink-0" />
+                            <SelectValue placeholder="Category" className="text-gray-900 dark:text-white" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl rounded-xl">
+                          <SelectItem value="tech">Technology</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                          <SelectItem value="cultural">Cultural</SelectItem>
+                          <SelectItem value="music">Music & Entertainment</SelectItem>
+                          <SelectItem value="sports">Sports & Fitness</SelectItem>
+                          <SelectItem value="education">Education & Workshop</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Search Button */}
+                    <div className="p-2">
+                      <Button
+                        size="lg"
+                        className="w-full md:w-auto px-8 py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base group/btn border-0"
+                      >
+                        <Search className="h-5 w-5 mr-2 transition-transform group-hover/btn:rotate-90 duration-300" />
+                        Search
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="md:w-[180px] px-4 py-3 border-b md:border-b-0 md:border-r border-[hsl(var(--hero-card-border))]">
-                  <Select>
-                    <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto">
-                      <div className="flex items-center">
-                        <MapPin className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                        <SelectValue placeholder="Location" className="text-[hsl(var(--hero-input-text))]" />
+              </div>
+
+              {/* Stats or Quick Actions */}
+              <div className="mt-12 flex flex-wrap gap-8 items-center">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-900 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                        {i}K
                       </div>
-                    </SelectTrigger>
-                    <SelectContent className="border border-[hsl(var(--border))] shadow-lg">
-                      <SelectItem value="addis">Addis Ababa</SelectItem>
-                      <SelectItem value="hawassa">Hawassa</SelectItem>
-                      <SelectItem value="bahirdar">Bahir Dar</SelectItem>
-                      <SelectItem value="mekele">Mekele</SelectItem>
-                      <SelectItem value="other">Other Locations</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    ))}
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-bold text-gray-900 dark:text-white">10,000+ Active Users</p>
+                    <p className="text-gray-600 dark:text-gray-400">Join the community</p>
+                  </div>
                 </div>
-                <div className="md:w-[180px] px-4 py-3">
-                  <Select>
-                    <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto">
-                      <div className="flex items-center">
-                        <Calendar className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                        <SelectValue placeholder="Category" className="text-[hsl(var(--hero-input-text))]" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="border border-[hsl(var(--border))] shadow-lg">
-                      <SelectItem value="tech">Technology</SelectItem>
-                      <SelectItem value="business">Business</SelectItem>
-                      <SelectItem value="cultural">Cultural</SelectItem>
-                      <SelectItem value="music">Music & Entertainment</SelectItem>
-                      <SelectItem value="sports">Sports & Fitness</SelectItem>
-                      <SelectItem value="education">Education & Workshop</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="px-1 py-1 flex justify-center md:justify-end items-center ml-auto">
-                  <Button
-                    size="lg"
-                    className="bg-primary hover:bg-primary-600 dark:bg-primary-600 dark:hover:bg-primary-500 rounded-lg h-12 w-full md:w-auto px-6 shadow-md hover:shadow-lg transition-all duration-300 font-medium"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Search
-                  </Button>
+                <div className="h-12 w-px bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <div className="text-sm">
+                    <p className="font-bold text-gray-900 dark:text-white">5.0 Rating</p>
+                    <p className="text-gray-600 dark:text-gray-400">From 2,000+ reviews</p>
+                  </div>
                 </div>
               </div>
             </div>

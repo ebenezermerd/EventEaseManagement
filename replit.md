@@ -37,11 +37,21 @@ EventEase is a comprehensive event management platform built with Next.js, desig
 │   ├── events/                   # Public event pages
 │   └── templates/
 ├── components/                   # React components
-│   ├── dashboard/
+│   ├── dashboard/                # Dashboard-specific components
+│   │   └── sidebar.tsx           # Dashboard navigation sidebar
 │   └── ui/                       # shadcn/ui components
 ├── contexts/                     # React contexts (AuthContext)
 ├── hooks/                        # Custom React hooks
 ├── lib/                          # Utility functions
+│   ├── mock-data/                # Centralized mock data provider
+│   │   ├── analytics.ts          # Analytics & chart data
+│   │   ├── events.ts             # Event listings with full details
+│   │   ├── orders.ts             # Order & transaction data
+│   │   ├── organizations.ts      # Organization profiles
+│   │   ├── tickets.ts            # Ticket types & pricing
+│   │   ├── users.ts              # User profiles & roles
+│   │   └── index.ts              # Central export file
+│   └── utils.ts                  # Utility functions
 ├── public/                       # Static assets
 └── types/                        # TypeScript types
 ```
@@ -97,6 +107,20 @@ npm run dev
   - Configured deployment for autoscale with build and start commands
   - Application is running successfully with homepage displaying correctly
 
+- **Nov 21, 2024**: Mock data system and UI improvements
+  - Created centralized mock data provider system in `lib/mock-data/`
+    - Organized by use cases: events, users, organizations, tickets, orders, analytics
+    - TypeScript interfaces and helper functions for type-safe data access
+    - Single source of truth for all mock data across the application
+  - Fixed dashboard sidebar navigation
+    - Removed duplicate "EventEase" text, kept styled logo with icon
+    - Implemented exact match logic for active menu states (only one item active at a time)
+    - Improved collapsed state with proper icon display
+  - Updated pages to use centralized mock data:
+    - Public events page: Enhanced UI with ratings, featured badges, improved layout
+    - Admin organizations page: Using centralized organization data
+    - Organizer events page: Added revenue display, status badges, better event cards
+
 ## User Preferences
 - None recorded yet
 
@@ -112,4 +136,8 @@ The application currently uses mock data throughout. To make it fully functional
 ## Notes
 - The application is configured to ignore TypeScript and ESLint errors during build
 - Images are set to unoptimized mode for compatibility
-- All placeholder data should be replaced with real database queries
+- Mock data system provides realistic demo data organized in `lib/mock-data/`
+  - All pages import from centralized mock data provider
+  - Helper functions available: `getEventById()`, `getEventsByOrganizer()`, etc.
+  - When implementing real database, replace imports from `lib/mock-data` with API calls
+- Sidebar navigation uses exact path matching to ensure only one menu item is active at a time

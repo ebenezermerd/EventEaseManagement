@@ -24,72 +24,45 @@ import {
   CheckCircle2,
   Calendar,
 } from "lucide-react"
+import { getEventById, mockEvents, getEventsByCategory } from "@/lib/mock-data/events"
 
-// Mock data for events
-const events = [
-  {
-    id: 1,
-    title: "Addis Tech Summit 2024",
-    description:
-      "Join us for the largest technology conference in Ethiopia, featuring keynote speakers, workshops, and networking opportunities with industry leaders. This year's theme is 'Innovation for Africa's Digital Future'.",
-    longDescription: `
-      <p>The Addis Tech Summit is Ethiopia's premier technology conference, bringing together tech enthusiasts, entrepreneurs, developers, and industry leaders from across Africa and beyond.</p>
-      
-      <p>This year's summit will focus on 'Innovation for Africa's Digital Future' and will feature:</p>
-      
-      <ul>
-        <li>Keynote speeches from global tech leaders</li>
-        <li>Panel discussions on emerging technologies</li>
-        <li>Hands-on workshops on AI, blockchain, and cloud computing</li>
-        <li>Startup pitch competition with prizes worth ETB 500,000</li>
-        <li>Networking sessions with investors and industry experts</li>
-        <li>Exhibition area showcasing the latest tech innovations</li>
-      </ul>
-      
-      <p>Whether you're a seasoned tech professional, a startup founder, or simply curious about the future of technology in Africa, the Addis Tech Summit offers valuable insights and connections to help you stay ahead in the rapidly evolving digital landscape.</p>
-    `,
-    date: "May 15, 2024",
-    time: "9:00 AM - 6:00 PM",
-    location: "Millennium Hall, Addis Ababa",
-    address: "Bole Road, Near Bole Medhanialem Church, Addis Ababa",
-    price: "ETB 500",
-    category: "Technology",
-    attendees: 320,
-    maxAttendees: 500,
-    image: "/assets/image (26).jpg?height=600&width=1200&text=Addis+Tech+Summit",
-    gallery: [
-      "/assets/image (27).jpg?height=400&width=600&text=Tech+Summit+1",
-      "/assets/image (28).jpg?height=400&width=600&text=Tech+Summit+2",
-      "/assets/image (29).jpg?height=400&width=600&text=Tech+Summit+3",
-      "/assets/image (30).jpg?height=400&width=600&text=Tech+Summit+4",
-    ],
-    organizer: {
-      name: "TechEthiopia",
-      logo: "/assets/image (32).jpg?height=100&width=100&text=TechEthiopia",
-      description:
-        "TechEthiopia is a leading technology community dedicated to advancing Ethiopia's tech ecosystem through events, training, and networking opportunities.",
-      events: 15,
-      followers: 2500,
-      website: "https://techethiopia.com",
-      email: "info@techethiopia.com",
-      phone: "+251 911 123 456",
-    },
+export default function EventDetailPage({ params }: { params: { id: string } }) {
+  const event = getEventById(params.id)
+
+  if (!event) {
+    notFound()
+  }
+
+  // Get related events from the same category
+  const relatedEvents = getEventsByCategory(event.category)
+    .filter((e) => e.id !== event.id)
+    .slice(0, 3)
+
+  // Get organizer's other events
+  const organizerOtherEvents = mockEvents
+    .filter((e) => e.id !== event.id && e.organizerId === event.organizerId)
+    .slice(0, 3)
+
+  // Mock data for detailed event information
+  const eventDetails = {
     ticketTypes: [
       {
         name: "Early Bird",
-        price: "ETB 350",
+        price: event.price.split(' - ')[0] || event.price,
         available: false,
         benefits: ["Full access to all sessions", "Conference materials", "Lunch and refreshments"],
+        requirements: undefined,
       },
       {
         name: "Regular",
-        price: "ETB 500",
+        price: event.price.split(' - ')[0] || event.price,
         available: true,
         benefits: ["Full access to all sessions", "Conference materials", "Lunch and refreshments"],
+        requirements: undefined,
       },
       {
         name: "VIP",
-        price: "ETB 1200",
+        price: event.price.split(' - ')[1] || `ETB ${parseInt(event.price.replace(/[^0-9]/g, '')) * 2}`,
         available: true,
         benefits: [
           "Priority seating",
@@ -99,137 +72,70 @@ const events = [
           "Conference materials",
           "Lunch and refreshments",
         ],
-      },
-      {
-        name: "Student",
-        price: "ETB 250",
-        available: true,
-        benefits: ["Full access to all sessions", "Conference materials", "Lunch and refreshments"],
-        requirements: "Valid student ID required",
+        requirements: undefined,
       },
     ],
     schedule: [
       {
         time: "9:00 AM - 10:00 AM",
-        title: "Registration & Welcome Coffee",
+        title: "Registration & Welcome",
         location: "Main Lobby",
+        speaker: undefined,
       },
       {
-        time: "10:00 AM - 11:00 AM",
-        title: "Opening Keynote: The Future of Tech in Africa",
-        speaker: "Dr. Betelhem Dessie, CEO of iCog Labs",
+        time: "10:00 AM - 12:00 PM",
+        title: "Opening Session",
         location: "Main Hall",
+        speaker: "Keynote Speaker",
       },
       {
-        time: "11:15 AM - 12:30 PM",
-        title: "Panel Discussion: Building Scalable Tech Solutions for African Markets",
-        location: "Main Hall",
-      },
-      {
-        time: "12:30 PM - 1:30 PM",
+        time: "12:00 PM - 1:00 PM",
         title: "Lunch Break & Networking",
         location: "Dining Area",
+        speaker: undefined,
       },
       {
-        time: "1:30 PM - 3:00 PM",
-        title: "Parallel Workshops (AI, Blockchain, Cloud Computing)",
+        time: "1:00 PM - 3:00 PM",
+        title: "Workshops & Activities",
         location: "Workshop Rooms",
+        speaker: "Workshop Facilitators",
       },
       {
-        time: "3:15 PM - 4:30 PM",
-        title: "Startup Pitch Competition",
-        location: "Innovation Stage",
-      },
-      {
-        time: "4:45 PM - 5:30 PM",
-        title: "Closing Keynote: Investing in Ethiopia's Tech Future",
+        time: "3:00 PM - 5:00 PM",
+        title: "Closing Session",
         location: "Main Hall",
-      },
-      {
-        time: "5:30 PM - 6:00 PM",
-        title: "Awards & Closing Remarks",
-        location: "Main Hall",
+        speaker: "Closing Remarks",
       },
     ],
     faqs: [
       {
         question: "Is there parking available at the venue?",
-        answer:
-          "Yes, Millennium Hall offers free parking for attendees. Please arrive early as spaces fill up quickly.",
+        answer: "Yes, the venue offers parking facilities for attendees. Please arrive early as spaces may be limited.",
       },
       {
-        question: "Will presentations be available after the event?",
-        answer:
-          "Yes, all presentations will be shared with registered attendees via email within 3 days after the event.",
-      },
-      {
-        question: "Is there a dress code?",
-        answer: "Business casual attire is recommended for the summit.",
+        question: "Will there be refreshments?",
+        answer: "Yes, refreshments and meals will be provided as part of your ticket.",
       },
       {
         question: "Can I get a refund if I can't attend?",
-        answer:
-          "Refunds are available up to 7 days before the event. After that, you can transfer your ticket to someone else.",
+        answer: "Refunds are available up to 7 days before the event. After that, you can transfer your ticket to someone else.",
       },
       {
-        question: "Will there be translation services available?",
-        answer:
-          "Yes, we will provide simultaneous translation between English and Amharic for all main stage sessions.",
+        question: "Is the event accessible?",
+        answer: "Yes, the venue is fully accessible with facilities for people with disabilities.",
       },
     ],
-  },
-  // More events would be defined here
-]
-
-// Mock data for related events
-const relatedEvents = [
-  {
-    id: 5,
-    title: "Startup Pitch Competition",
-    date: "June 12, 2024",
-    time: "1:00 PM - 5:00 PM",
-    location: "iceaddis, Addis Ababa",
-    price: "ETB 250",
-    category: "Business",
-    attendees: 120,
-    image: "/assets/image (35).jpg?height=300&width=500&text=Startup+Pitch",
-  },
-  {
-    id: 12,
-    title: "Tech Startup Hackathon",
-    date: "September 5, 2024",
-    time: "9:00 AM - 9:00 PM",
-    location: "iceaddis, Addis Ababa",
-    price: "ETB 100",
-    category: "Technology",
-    attendees: 150,
-    image: "/assets/image (37).jpg?height=300&width=500&text=Hackathon",
-  },
-  {
-    id: 14,
-    title: "Digital Marketing Conference",
-    date: "September 28, 2024",
-    time: "9:00 AM - 5:00 PM",
-    location: "Capital Hotel, Addis Ababa",
-    price: "ETB 800",
-    category: "Business",
-    attendees: 220,
-    image: "/assets/image (38).jpg?height=300&width=500&text=Marketing+Conference",
-  },
-]
-
-export default function EventDetailPage({ params }: { params: { id: string } }) {
-  const eventId = Number.parseInt(params.id)
-  const event = events.find((e) => e.id === eventId)
-
-  if (!event) {
-    notFound()
+    organizer: {
+      name: event.organizerName,
+      logo: event.organizerLogo || "/assets/placeholder-logo.png",
+      description: `${event.organizerName} is a leading event organizer in Ethiopia, dedicated to creating memorable experiences.`,
+      events: mockEvents.filter(e => e.organizerId === event.organizerId).length,
+      followers: Math.floor(Math.random() * 5000) + 500,
+      website: `https://${event.organizerName.toLowerCase().replace(/\s+/g, '')}.com`,
+      email: `info@${event.organizerName.toLowerCase().replace(/\s+/g, '')}.com`,
+      phone: "+251 911 123 456",
+    },
   }
-
-  // Get organizer's other events
-  const organizerOtherEvents = events
-    .filter((e) => e.id !== eventId && e.organizer?.name === event.organizer?.name)
-    .slice(0, 3)
 
   return (
     <>
@@ -246,7 +152,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               <div className="flex flex-wrap gap-4 text-white/90">
                 <div className="flex items-center">
                   <CalendarDays className="h-5 w-5 mr-2" />
-                  <span>{event.date}</span>
+                  <span>{event.eventDate}</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-5 w-5 mr-2" />
@@ -299,24 +205,27 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 </TabsList>
                 <TabsContent value="about" className="pt-6">
                   <div className="prose prose-lg dark:prose-invert max-w-none">
-                    <div dangerouslySetInnerHTML={{ __html: event.longDescription }} />
+                    <p>{event.description}</p>
+                    {event.longDescription && <p>{event.longDescription}</p>}
                   </div>
 
-                  <div className="mt-10">
-                    <h3 className="text-2xl font-bold mb-4">Event Gallery</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {event.gallery.map((image, index) => (
-                        <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
-                          <Image
-                            src={image || "/assets/image (41).jpg"}
-                            alt={`${event.title} gallery image ${index + 1}`}
-                            fill
-                            className="object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
+                  {event.gallery && event.gallery.length > 0 && (
+                    <div className="mt-10">
+                      <h3 className="text-2xl font-bold mb-4">Event Gallery</h3>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {event.gallery.map((image, index) => (
+                          <div key={index} className="aspect-square relative rounded-lg overflow-hidden">
+                            <Image
+                              src={image || "/assets/image (41).jpg"}
+                              alt={`${event.title} gallery image ${index + 1}`}
+                              fill
+                              className="object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="mt-10">
                     <h3 className="text-2xl font-bold mb-4">Location</h3>
@@ -350,7 +259,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <TabsContent value="schedule" className="pt-6">
                   <h3 className="text-2xl font-bold mb-6">Event Schedule</h3>
                   <div className="space-y-6">
-                    {event.schedule.map((item, index) => (
+                    {eventDetails.schedule.map((item, index) => (
                       <Card key={index}>
                         <CardContent className="p-6">
                           <div className="flex flex-col md:flex-row gap-4">
@@ -379,7 +288,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <TabsContent value="tickets" className="pt-6">
                   <h3 className="text-2xl font-bold mb-6">Ticket Options</h3>
                   <div className="space-y-6">
-                    {event.ticketTypes.map((ticket, index) => (
+                    {eventDetails.ticketTypes.map((ticket, index) => (
                       <Card key={index} className={!ticket.available ? "opacity-70" : ""}>
                         <CardContent className="p-6">
                           <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -436,7 +345,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                 <TabsContent value="faq" className="pt-6">
                   <h3 className="text-2xl font-bold mb-6">Frequently Asked Questions</h3>
                   <div className="space-y-6">
-                    {event.faqs.map((faq, index) => (
+                    {eventDetails.faqs.map((faq, index) => (
                       <Card key={index}>
                         <CardContent className="p-6">
                           <h4 className="text-lg font-semibold mb-2">{faq.question}</h4>
@@ -464,37 +373,37 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                   <div className="flex items-center gap-4 mb-4">
                     <div className="h-16 w-16 relative rounded-lg overflow-hidden">
                       <Image
-                        src={event.organizer.logo || "/assets/image (42).jpg"}
-                        alt={event.organizer.name}
+                        src={eventDetails.organizer.logo || "/assets/image (42).jpg"}
+                        alt={eventDetails.organizer.name}
                         fill
                         className="object-cover"
                       />
                     </div>
                     <div>
-                      <h4 className="font-semibold">{event.organizer.name}</h4>
+                      <h4 className="font-semibold">{eventDetails.organizer.name}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {event.organizer.events} events · {event.organizer.followers} followers
+                        {eventDetails.organizer.events} events · {eventDetails.organizer.followers} followers
                       </p>
                     </div>
                   </div>
-                  <p className="text-muted-foreground text-sm mb-4">{event.organizer.description}</p>
+                  <p className="text-muted-foreground text-sm mb-4">{eventDetails.organizer.description}</p>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
                       <Globe className="h-4 w-4 text-muted-foreground" />
-                      <a href={event.organizer.website} className="text-primary hover:underline">
-                        {event.organizer.website.replace("https://", "")}
+                      <a href={eventDetails.organizer.website} className="text-primary hover:underline">
+                        {eventDetails.organizer.website.replace("https://", "")}
                       </a>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Mail className="h-4 w-4 text-muted-foreground" />
-                      <a href={`mailto:${event.organizer.email}`} className="hover:underline">
-                        {event.organizer.email}
+                      <a href={`mailto:${eventDetails.organizer.email}`} className="hover:underline">
+                        {eventDetails.organizer.email}
                       </a>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <a href={`tel:${event.organizer.phone}`} className="hover:underline">
-                        {event.organizer.phone}
+                      <a href={`tel:${eventDetails.organizer.phone}`} className="hover:underline">
+                        {eventDetails.organizer.phone}
                       </a>
                     </div>
                   </div>
@@ -520,18 +429,18 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                     </div>
                     <div className="bg-muted p-4 rounded-lg text-center">
                       <div className="text-3xl font-bold text-primary">
-                        {Math.round((event.attendees / event.maxAttendees) * 100)}%
+                        {event.maxAttendees ? Math.round((event.attendees / event.maxAttendees) * 100) : 0}%
                       </div>
                       <div className="text-sm text-muted-foreground">Capacity</div>
                     </div>
                     <div className="bg-muted p-4 rounded-lg text-center">
                       <div className="text-3xl font-bold text-primary">
-                        {Math.floor((new Date(event.date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                        {Math.floor((new Date(event.eventDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
                       </div>
                       <div className="text-sm text-muted-foreground">Days Left</div>
                     </div>
                     <div className="bg-muted p-4 rounded-lg text-center">
-                      <div className="text-3xl font-bold text-primary">{event.ticketTypes.length}</div>
+                      <div className="text-3xl font-bold text-primary">{eventDetails.ticketTypes.length}</div>
                       <div className="text-sm text-muted-foreground">Ticket Types</div>
                     </div>
                   </div>
@@ -541,7 +450,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
               {/* More from this organizer */}
               {organizerOtherEvents.length > 0 && (
                 <div>
-                  <h3 className="text-xl font-bold mb-4">More from {event.organizer.name}</h3>
+                  <h3 className="text-xl font-bold mb-4">More from {eventDetails.organizer.name}</h3>
                   <div className="space-y-4">
                     {organizerOtherEvents.map((otherEvent) => (
                       <Link key={otherEvent.id} href={`/events/${otherEvent.id}`}>
@@ -558,7 +467,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                               </div>
                               <div>
                                 <h4 className="font-semibold line-clamp-1">{otherEvent.title}</h4>
-                                <p className="text-sm text-muted-foreground">{otherEvent.date}</p>
+                                <p className="text-sm text-muted-foreground">{otherEvent.eventDate}</p>
                                 <p className="text-sm text-primary mt-1">{otherEvent.price}</p>
                               </div>
                             </div>
@@ -567,7 +476,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                       </Link>
                     ))}
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href={`/organizers/${event.organizer.name.toLowerCase().replace(/\s+/g, "-")}`}>
+                      <Link href={`/events?organizer=${event.organizerId}`}>
                         View All Events
                       </Link>
                     </Button>
@@ -608,7 +517,7 @@ export default function EventDetailPage({ params }: { params: { id: string } }) 
                         <div className="flex items-center">
                           <CalendarDays className="h-4 w-4 mr-2 text-primary/70" />
                           <span>
-                            {relEvent.date} • {relEvent.time}
+                            {relEvent.eventDate} • {relEvent.time}
                           </span>
                         </div>
                         <div className="flex items-center">

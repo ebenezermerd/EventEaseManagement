@@ -7,8 +7,11 @@ import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { getFeaturedEvents } from "@/lib/mock-data/events"
 
 export default function Home() {
+  const featuredEvents = getFeaturedEvents().slice(0, 3)
+
   return (
     <div className="flex min-h-screen flex-col">
       <SiteHeader />
@@ -18,7 +21,7 @@ export default function Home() {
           {/* Animated Gradient Mesh Background */}
           <div className="absolute inset-0 -z-20">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-purple-50 to-indigo-50 dark:from-gray-950 dark:via-purple-950/20 dark:to-indigo-950/20"></div>
-            
+
             {/* Animated Mesh Gradient Orbs */}
             <div className="absolute top-0 left-0 w-full h-screen overflow-visible">
               <div className="absolute -top-40 -right-40 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-purple-400/30 via-pink-400/20 to-transparent dark:from-purple-600/20 dark:via-pink-600/10 blur-3xl animate-pulse-slow"></div>
@@ -140,7 +143,7 @@ export default function Home() {
               <div className="relative group">
                 {/* Glow effect on hover */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition duration-500"></div>
-                
+
                 <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden transition-all duration-300 hover:shadow-purple-500/10 dark:hover:shadow-purple-500/20">
                   <div className="flex flex-col md:flex-row">
                     {/* Search Input */}
@@ -249,72 +252,45 @@ export default function Home() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[
-                {
-                  id: 1,
-                  title: "Addis Tech Summit 2024",
-                  date: "May 15, 2024",
-                  time: "9:00 AM",
-                  location: "Millennium Hall, Addis Ababa",
-                  category: "Technology",
-                  image: "/assets/image (15).jpg?height=300&width=500&text=Addis+Tech+Summit",
-                },
-                {
-                  id: 2,
-                  title: "Ethiopian Coffee Festival",
-                  date: "May 22, 2024",
-                  time: "10:00 AM",
-                  location: "Friendship Park, Addis Ababa",
-                  category: "Cultural",
-                  image: "/assets/image (16).jpg?height=300&width=500&text=Coffee+Festival",
-                },
-                {
-                  id: 3,
-                  title: "Cultural Heritage Exhibition",
-                  date: "May 28, 2024",
-                  time: "2:00 PM",
-                  location: "National Museum, Addis Ababa",
-                  category: "Cultural",
-                  image: "/assets/image (18).jpg?height=300&width=500&text=Cultural+Exhibition",
-                },
-              ].map((event, index) => (
-                <div
-                  key={event.id}
-                  className="group relative overflow-hidden rounded-lg border bg-background shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
-                >
-                  <div className="aspect-[16/9] relative overflow-hidden">
-                    <Image
-                      src={event.image || "/assets/image (22).jpg"}
-                      alt={event.title}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <Badge className="absolute top-3 right-3 bg-primary hover:bg-primary">{event.category}</Badge>
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{event.title}</h3>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center">
-                        <CalendarDays className="h-4 w-4 mr-2 text-primary/70" />
-                        <span>{event.date}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-2 text-primary/70" />
-                        <span>{event.time}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <MapPin className="h-4 w-4 mr-2 text-primary/70" />
-                        <span>{event.location}</span>
-                      </div>
+              {featuredEvents.map((event) => (
+                <Link key={event.id} href={`/events/${event.id}`}>
+                  <div
+                    className="group relative overflow-hidden rounded-lg border bg-background shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+                  >
+                    <div className="aspect-[16/9] relative overflow-hidden">
+                      <Image
+                        src={event.image || "/assets/image (22).jpg"}
+                        alt={event.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <Badge className="absolute top-3 right-3 bg-primary hover:bg-primary">{event.category}</Badge>
                     </div>
-                    <Button
-                      variant="outline"
-                      className="w-full mt-4 group-hover:bg-primary group-hover:text-white transition-colors"
-                    >
-                      View Details
-                    </Button>
+                    <div className="p-5">
+                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{event.title}</h3>
+                      <div className="space-y-2 text-sm text-muted-foreground">
+                        <div className="flex items-center">
+                          <CalendarDays className="h-4 w-4 mr-2 text-primary/70" />
+                          <span>{event.eventDate}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-2 text-primary/70" />
+                          <span>{event.time}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-2 text-primary/70" />
+                          <span>{event.location}</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-4 group-hover:bg-primary group-hover:text-white transition-colors"
+                      >
+                        View Details
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
             <div className="flex justify-center mt-10">
@@ -418,10 +394,10 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </section>
+        </section >
 
         {/* FAQ Section */}
-        <section className="py-20 bg-muted/30">
+        < section className="py-20 bg-muted/30" >
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <div className="space-y-2">
@@ -486,10 +462,10 @@ export default function Home() {
               </Accordion>
             </div>
           </div>
-        </section>
+        </section >
 
         {/* CTA Section */}
-        <section className="py-20 bg-gradient-to-r from-primary-600 to-primary-800">
+        < section className="py-20 bg-gradient-to-r from-primary-600 to-primary-800" >
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center text-white">
               <div className="space-y-2">
@@ -512,11 +488,11 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </section>
-      </main>
+        </section >
+      </main >
 
       {/* Footer */}
-      <footer className="border-t py-12 md:py-16 lg:py-20">
+      < footer className="border-t py-12 md:py-16 lg:py-20" >
         <div className="container px-4 md:px-6">
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-4">
@@ -634,7 +610,7 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mt-4 md:mt-0">Made with ❤️ in Addis Ababa, Ethiopia</p>
           </div>
         </div>
-      </footer>
-    </div>
+      </footer >
+    </div >
   )
 }

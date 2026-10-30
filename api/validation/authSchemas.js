@@ -3,11 +3,11 @@ const Joi = require("joi")
 
 // User registration schema
 const registerSchema = Joi.object({
-  name: Joi.string().required(),
+  name: Joi.string().trim().min(2).max(100).required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  phone: Joi.string().optional(),
-  role: Joi.string().valid("admin", "organizer", "attendee").default("attendee"),
+  password: Joi.string().min(8).max(128).required(),
+  phone: Joi.string().allow("").optional(),
+  role: Joi.string().valid("organizer", "attendee").default("attendee"),
   
   // Organizer specific fields (only required when role is organizer)
   companyName: Joi.when('role', {

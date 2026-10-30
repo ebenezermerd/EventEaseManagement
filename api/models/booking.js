@@ -55,6 +55,15 @@ const Booking = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    paymentReference: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+    },
+    checkedInAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     timestamps: true,

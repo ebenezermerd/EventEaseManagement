@@ -6,7 +6,7 @@ const Event = require("../models/event")
 const User = require("../models/user")
 const UserEventInteraction = require("../models/userEventInteraction")
 const SavedEvent = require("../models/savedEvent")
-const Order = require("../models/order")
+const Booking = require("../models/booking")
 const OrderItem = require("../models/orderItem")
 const Organizer = require("../models/organizer")
 
@@ -72,7 +72,7 @@ class RecommendationService {
 
       // Build where clause for events
       const whereClause = {
-        status: "published",
+        approvalStatus: "approved",
         eventDate: { [Op.gte]: new Date() },
         id: { [Op.notIn]: attendedEventIds },
       }
@@ -88,7 +88,7 @@ class RecommendationService {
         include: [
           {
             model: Organizer,
-            attributes: ["id", "companyName", "logo"],
+            attributes: ["userId", "companyName", "logo"],
           },
         ],
         order: [["eventDate", "ASC"]],
@@ -180,7 +180,7 @@ class RecommendationService {
               image: event.image,
               organizer: event.Organizer
                 ? {
-                    id: event.Organizer.id,
+                    id: event.Organizer.userId,
                     name: event.Organizer.companyName,
                     logo: event.Organizer.logo,
                   }
@@ -213,7 +213,7 @@ class RecommendationService {
             image: event.image,
             organizer: event.Organizer
               ? {
-                  id: event.Organizer.id,
+                  id: event.Organizer.userId,
                   name: event.Organizer.companyName,
                   logo: event.Organizer.logo,
                 }
@@ -264,15 +264,13 @@ class RecommendationService {
    */
   async getAttendedEventIds(userId) {
     try {
-      const orders = await Order.findAll({
-        where: {
-          userId,
-          status: { [Op.in]: ["completed", "pending"] },
-        },
+      // Bookings replaced orders as the record of attendance.
+      const bookings = await Booking.findAll({
+        where: { userId, status: { [Op.in]: ["confirmed", "checked-in"] } },
         attributes: ["eventId"],
       })
 
-      return orders.map((order) => order.eventId)
+      return bookings.map((booking) => booking.eventId)
     } catch (error) {
       console.error("Error getting attended event IDs:", error)
       return []

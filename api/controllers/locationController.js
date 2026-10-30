@@ -52,7 +52,7 @@ exports.getPopularCities = async (req, res) => {
         approvalStatus: "approved"
       },
       group: ["location"],
-      order: [[sequelize.literal("eventCount"), "DESC"]],
+      order: [[sequelize.literal('"eventCount"'), "DESC"]],
       limit: 10,
       raw: true
     })
@@ -136,7 +136,7 @@ exports.getLocationsByCity = async (req, res) => {
         "region"
       ],
       where: {
-        location: { [Op.like]: `%${city}%` }
+        location: { [Op.iLike]: `%${city}%` }
       },
       raw: true
     })

@@ -55,8 +55,8 @@ exports.getOrders = async (req, res) => {
     // Add search filter
     if (search) {
       whereClause[Op.or] = [
-        { billingName: { [Op.like]: `%${search}%` } },
-        { billingEmail: { [Op.like]: `%${search}%` } },
+        { billingName: { [Op.iLike]: `%${search}%` } },
+        { billingEmail: { [Op.iLike]: `%${search}%` } },
       ]
     }
 
@@ -399,13 +399,13 @@ exports.getOrderStatistics = async (req, res) => {
 
     const revenueByPeriod = await Order.findAll({
       attributes: [
-        [sequelize.fn("DATE_FORMAT", sequelize.col("purchaseDate"), dateFormat), "period"],
+        [sequelize.fn("to_char", sequelize.col("purchaseDate"), dateFormat), "period"],
         [sequelize.fn("COUNT", sequelize.col("id")), "orders"],
         [sequelize.fn("SUM", sequelize.col("totalAmount")), "revenue"],
       ],
       where: { eventId: { [Op.in]: eventIds } },
-      group: [sequelize.fn("DATE_FORMAT", sequelize.col("purchaseDate"), dateFormat)],
-      order: [[sequelize.fn("DATE_FORMAT", sequelize.col("purchaseDate"), dateFormat), "ASC"]],
+      group: [sequelize.fn("to_char", sequelize.col("purchaseDate"), dateFormat)],
+      order: [[sequelize.fn("to_char", sequelize.col("purchaseDate"), dateFormat), "ASC"]],
     })
 
     // Format revenue by period

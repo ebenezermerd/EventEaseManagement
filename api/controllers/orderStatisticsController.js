@@ -114,13 +114,13 @@ exports.getOrderStatistics = async (req, res) => {
 
     const revenueByPeriod = await Order.findAll({
       attributes: [
-        [Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat), "period"],
+        [Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat), "period"],
         [Sequelize.fn("COUNT", Sequelize.col("id")), "orders"],
         [Sequelize.fn("SUM", Sequelize.col("totalAmount")), "revenue"],
       ],
       where: orderWhereClause,
-      group: [Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat)],
-      order: [[Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat), "ASC"]],
+      group: [Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat)],
+      order: [[Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat), "ASC"]],
     })
 
     // Format revenue by period
@@ -751,12 +751,12 @@ exports.getRevenueReport = async (req, res) => {
 
     const revenueByPeriod = await Order.findAll({
       attributes: [
-        [Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat), "period"],
+        [Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat), "period"],
         [Sequelize.fn("SUM", Sequelize.col("totalAmount")), "revenue"],
       ],
       where: orderWhereClause,
-      group: [Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat)],
-      order: [[Sequelize.fn("DATE_FORMAT", Sequelize.col("purchaseDate"), dateFormat), "ASC"]],
+      group: [Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat)],
+      order: [[Sequelize.fn("to_char", Sequelize.col("purchaseDate"), dateFormat), "ASC"]],
     })
 
     // Format revenue by period

@@ -1260,7 +1260,7 @@ exports.getEventFeed = async (req, res) => {
     // Build where clause
     const whereClause = {}
     if (search) {
-      whereClause[Op.or] = [{ title: { [Op.like]: `%${search}%` } }, { description: { [Op.like]: `%${search}%` } }]
+      whereClause[Op.or] = [{ title: { [Op.iLike]: `%${search}%` } }, { description: { [Op.iLike]: `%${search}%` } }]
     }
     if (category) {
       whereClause.category = category

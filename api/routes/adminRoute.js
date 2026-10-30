@@ -42,6 +42,13 @@ router.get("/admin/dashboard", userAuth, checkRole("admin"), adminController.get
 
 // User management
 router.get("/admin/users", userAuth, checkRole("admin"), adminController.getAllUsers)
+router.put(
+  "/admin/users/:id/status",
+  userAuth,
+  checkRole("admin"),
+  validate(Joi.object({ status: Joi.string().valid("active", "inactive").required() })),
+  adminController.updateUserStatus,
+)
 
 // Organizer management
 router.get("/admin/organizers", userAuth, checkRole("admin"), adminController.getAllOrganizers)

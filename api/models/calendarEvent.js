@@ -68,8 +68,6 @@ const CalendarEvent = sequelize.define(
   {
     timestamps: true,
     tableName: "calendar_events",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 

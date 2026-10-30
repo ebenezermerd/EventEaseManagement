@@ -27,6 +27,7 @@ const UserEventInteraction = require("./userEventInteraction")
 const Calendar = require("./calendar")
 const CalendarEvent = require("./calendarEvent")
 const EventRelationship = require("./eventRelationship")
+const Category = require("./category")
 
 // User and Organizer associations
 User.hasOne(Organizer, { foreignKey: "userId" })
@@ -193,4 +194,5 @@ module.exports = {
   EventTemplate,
   AIGenerationLog,
   EventRelationship,
+  Category,
 }

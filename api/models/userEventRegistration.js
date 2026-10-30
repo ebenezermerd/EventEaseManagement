@@ -12,7 +12,7 @@ const UserEventRegistration = sequelize.define(
       autoIncrement: true,
     },
     userId: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.UUID,
       references: {
         model: User,
         key: "id",
@@ -20,7 +20,7 @@ const UserEventRegistration = sequelize.define(
       allowNull: false,
     },
     eventId: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.UUID,
       references: {
         model: Event,
         key: "id",
@@ -40,8 +40,6 @@ const UserEventRegistration = sequelize.define(
   {
     timestamps: true,
     tableName: "user_event_registrations",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 module.exports = UserEventRegistration

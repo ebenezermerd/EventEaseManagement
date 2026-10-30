@@ -16,7 +16,7 @@ const Event = sequelize.define(
       allowNull: false,
     },
     description: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
     },
     longDescription: {
@@ -111,8 +111,6 @@ const Event = sequelize.define(
   {
     timestamps: true,
     tableName: "events",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 

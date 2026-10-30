@@ -34,8 +34,6 @@ const EventCategory = sequelize.define(
   {
     timestamps: true,
     tableName: "event_categories",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 module.exports = EventCategory 

@@ -36,8 +36,6 @@ const EventFAQ = sequelize.define(
   {
     timestamps: true,
     tableName: "event_faqs",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   }
 )
 

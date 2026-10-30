@@ -11,7 +11,7 @@ const Payment = sequelize.define(
       autoIncrement: true,
     },
     orderId: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.UUID,
       references: {
         model: Order,
         key: "id",
@@ -28,7 +28,7 @@ const Payment = sequelize.define(
     },
     currency: {
       type: Sequelize.STRING(3),
-      defaultValue: "USD",
+      defaultValue: "ETB",
     },
     status: {
       type: Sequelize.ENUM("pending", "completed", "failed", "refunded"),
@@ -54,8 +54,6 @@ const Payment = sequelize.define(
   {
     timestamps: true,
     tableName: "payments",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 module.exports = Payment 

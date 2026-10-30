@@ -45,8 +45,6 @@ const EventRelationship = sequelize.define(
   {
     timestamps: true,
     tableName: "event_relationships",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
     indexes: [
       {
         unique: true,

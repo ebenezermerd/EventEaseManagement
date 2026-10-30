@@ -66,8 +66,6 @@ const OrderItem = sequelize.define(
   {
     timestamps: true,
     tableName: "order_items",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 

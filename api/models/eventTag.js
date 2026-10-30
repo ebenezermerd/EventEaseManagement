@@ -30,8 +30,6 @@ const EventTag = sequelize.define(
   {
     timestamps: true,
     tableName: "event_tags",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 module.exports = EventTag 

@@ -44,8 +44,6 @@ const UserEventInteraction = sequelize.define(
   {
     timestamps: true,
     tableName: "user_event_interactions",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 

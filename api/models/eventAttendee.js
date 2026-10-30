@@ -47,8 +47,6 @@ const EventAttendee = sequelize.define(
   {
     timestamps: true,
     tableName: "event_attendees",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
     indexes: [
       {
         unique: true,

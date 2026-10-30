@@ -28,8 +28,13 @@ const TicketType = sequelize.define(
       allowNull: true,
     },
     price: {
-      type: DataTypes.STRING,
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
+      defaultValue: 0,
+      get() {
+        const value = this.getDataValue("price")
+        return value === null || value === undefined ? 0 : Number(value)
+      },
     },
     currency: {
       type: DataTypes.STRING,
@@ -68,8 +73,6 @@ const TicketType = sequelize.define(
   {
     timestamps: true,
     tableName: "ticket_types",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   }
 )
 

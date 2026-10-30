@@ -103,8 +103,6 @@ const   Organizer = sequelize.define(
   {
     timestamps: true,
     tableName: "organizers",
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
   },
 )
 

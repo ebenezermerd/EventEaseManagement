@@ -1,46 +1,28 @@
 // config/database.js
+// A single Sequelize instance shared by every model. Postgres (Neon in
+// production, any local Postgres in development) via DATABASE_URL.
 const { Sequelize } = require("sequelize")
+const pg = require("pg")
 const config = require("./config")
 
-// Create Sequelize instance
-const sequelize = new Sequelize(config.DB_CONFIG.database, config.DB_CONFIG.user, config.DB_CONFIG.password, {
-  host: config.DB_CONFIG.host,
-  dialect: config.DB_CONFIG.dialect,
-  logging: config.NODE_ENV === "development" ? console.log : false,
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000,
-  },
-  define: {
-    charset: "utf8mb4",
-    collate: "utf8mb4_general_ci",
-    freezeTableName: true,
-  },
-  // Add query options to avoid foreign key constraints
-  quoteIdentifiers: false,
-})
-
-// Function to initialize database
-const initializeDatabase = async () => {
-  try {
-    // Test connection
-    await sequelize.authenticate()
-    console.log("Database connection established successfully.")
-
-    // Import models
-    require("../models/association")
-
-    // Skip sync if it causes permission issues
-    console.log("Database models loaded successfully.")
-
-    return true
-  } catch (error) {
-    console.error("Error initializing database:", error)
-    return false
-  }
+if (!config.DATABASE_URL) {
+  console.warn("[database] DATABASE_URL is not set; queries will fail until it is configured")
 }
 
+const isLocal = /@(localhost|127\.0\.0\.1)[:/]/.test(config.DATABASE_URL)
+
+// Reuse one instance across warm invocations of the serverless function.
+const sequelize =
+  global.__eventeaseSequelize ||
+  new Sequelize(config.DATABASE_URL || "postgres://localhost:5432/eventease", {
+    dialect: "postgres",
+    dialectModule: pg,
+    logging: process.env.SQL_LOG === "1" ? console.log : false,
+    dialectOptions: isLocal ? {} : { ssl: { require: true, rejectUnauthorized: false } },
+    pool: { max: 3, min: 0, acquire: 20000, idle: 5000, evict: 5000 },
+    define: { freezeTableName: true },
+  })
+
+global.__eventeaseSequelize = sequelize
+
 module.exports = sequelize
-module.exports.initializeDatabase = initializeDatabase

@@ -1,29 +1,26 @@
-const nodemailer = require("nodemailer")
-const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM } = require("../config/config") // Import centralized config
+// middleware/sendEmail.js
+// Sends mail only when SMTP settings exist; otherwise logs the message so
+// flows that "send an email" keep working on demo deployments.
+const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS, EMAIL_FROM } = require("../config/config")
 
 const sendEmail = async (to, subject, text) => {
-  const transporter = nodemailer.createTransport({
-    host: EMAIL_HOST,
-    port: EMAIL_PORT,
-    secure: EMAIL_PORT == 465, // Secure if using port 465 (true/false)
-    auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS,
-    },
-  })
-
-  const mailOptions = {
-    from: EMAIL_FROM,
-    to,
-    subject,
-    text,
+  if (!EMAIL_HOST || !EMAIL_USER) {
+    console.log(`[email disabled] to=${to} subject="${subject}"`)
+    return { success: true, skipped: true, message: "Email sending is disabled on this deployment" }
   }
-
   try {
-    await transporter.sendMail(mailOptions)
-    return { success: true, message: "Email sent successfully!" }
+    // Loaded lazily so the dependency is only needed when email is configured.
+    const nodemailer = require("nodemailer")
+    const transporter = nodemailer.createTransport({
+      host: EMAIL_HOST,
+      port: EMAIL_PORT,
+      secure: EMAIL_PORT === 465,
+      auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+    })
+    await transporter.sendMail({ from: EMAIL_FROM, to, subject, text })
+    return { success: true, message: "Email sent" }
   } catch (error) {
-    console.error("Error sending email:", error)
+    console.error("Error sending email:", error.message)
     return { success: false, error: error.message }
   }
 }

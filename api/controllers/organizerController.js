@@ -1,589 +1,210 @@
 // controllers/organizerController.js
 const { Op } = require("sequelize")
-const { v4: uuidv4 } = require("uuid")
-const User = require("../models/user")
-const Organizer = require("../models/organizer")
-const Event = require("../models/event")
-const Order = require("../models/order")
-const OrderItem = require("../models/orderItem")
-const TicketType = require("../models/ticketType")
-const { getPagination, getPagingData } = require("../utils/pagination")
+const sequelize = require("../config/database")
+const { User, Organizer, Event, TicketType, Booking } = require("../models/association")
+const { formatEvent, toNumber } = require("../utils/eventFormat")
+const { formatBooking } = require("./bookingController")
 
-// Apply to become an Organizer
-exports.applyToBeOrganizer = async (req, res) => {
+const PROFILE_FIELDS = ["companyName", "description", "logo", "website", "address", "region", "socialMedia"]
+
+const formatOrganizer = (o) => ({
+  userId: o.userId,
+  companyName: o.companyName,
+  description: o.description,
+  logo: o.logo,
+  website: o.website,
+  address: o.address,
+  region: o.region,
+  tinNumber: o.tinNumber,
+  approvalStatus: o.approvalStatus,
+  verified: o.verified,
+  totalEvents: o.totalEvents,
+  createdAt: o.createdAt,
+  user: o.User ? { id: o.User.id, name: o.User.name, email: o.User.email, phone: o.User.phone } : undefined,
+})
+
+// POST /api/organizers/apply: an attendee asks to become an organizer.
+exports.applyToBeOrganizer = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { companyName, description, logo, website, address, region, tinNumber, verificationDocuments } = req.body
-
-    // Check if user is already an organizer
-    const existingOrganizer = await Organizer.findOne({
-      where: { userId },
-    })
-
-    if (existingOrganizer) {
-      return res.status(400).json({
-        success: false,
-        message: "User is already an organizer",
-      })
+    const { companyName, tinNumber } = req.body
+    if (!companyName || !tinNumber) {
+      return res.status(400).json({ success: false, message: "companyName and tinNumber are required" })
     }
-
-    // Check if TIN number is already used
-    const organizerWithTin = await Organizer.findOne({
-      where: { tinNumber },
-    })
-
-    if (organizerWithTin) {
-      return res.status(400).json({
-        success: false,
-        message: "TIN number is already registered",
-      })
+    if (await Organizer.findOne({ where: { userId: req.user.id } })) {
+      return res.status(409).json({ success: false, message: "You already have an organizer profile" })
     }
-
-    // Create organizer
-    const organizer = await Organizer.create({
-      userId,
-      companyName,
-      description,
-      logo,
-      website,
-      address,
-      region,
-      tinNumber,
-      verificationDocuments,
-      approvalStatus: "pending",
+    if (await Organizer.findOne({ where: { tinNumber } })) {
+      return res.status(409).json({ success: false, message: "This TIN number is already registered" })
+    }
+    const data = { userId: req.user.id, tinNumber, approvalStatus: "pending" }
+    for (const key of PROFILE_FIELDS) if (req.body[key] !== undefined) data[key] = req.body[key]
+    const organizer = await sequelize.transaction(async (transaction) => {
+      const created = await Organizer.create(data, { transaction })
+      await User.update({ role: "organizer" }, { where: { id: req.user.id }, transaction })
+      return created
     })
-
     res.status(201).json({
       success: true,
-      message: "Organizer application submitted successfully",
-      organizer: {
-        userId: organizer.userId,
-        companyName: organizer.companyName,
-        status: organizer.status,
-      },
+      message: "Application submitted. Sign in again to open the organizer dashboard.",
+      organizer: formatOrganizer(organizer),
     })
   } catch (error) {
-    console.error("Apply to be organizer error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Get Organizer Profile
-exports.getOrganizerProfile = async (req, res) => {
+// GET /api/organizers/profile
+exports.getOrganizerProfile = async (req, res, next) => {
   try {
-    const userId = req.user.id
-
-    const organizer = await Organizer.findOne({
-      where: { userId },
-      include: [
-        {
-          model: User,
-          attributes: ["name", "email", "phone"],
-        },
-      ],
-    })
-
-    if (!organizer) {
-      return res.status(404).json({
-        success: false,
-        message: "Organizer profile not found",
-      })
-    }
-
-    res.status(200).json({
-      success: true,
-      organizer: {
-        userId: organizer.userId,
-        companyName: organizer.companyName,
-        description: organizer.description,
-        logo: organizer.logo,
-        website: organizer.website,
-        socialMedia: organizer.socialMedia,
-        address: organizer.address,
-        region: organizer.region,
-        tinNumber: organizer.tinNumber,
-        verified: organizer.verified,
-        status: organizer.status,
-        followers: organizer.followers,
-        totalEvents: organizer.totalEvents,
-        user: {
-          name: organizer.User.name,
-          email: organizer.User.email,
-          phone: organizer.User.phone,
-        },
-      },
-    })
+    const organizer = await Organizer.findOne({ where: { userId: req.user.id }, include: [User] })
+    if (!organizer) return res.status(404).json({ success: false, message: "Organizer profile not found" })
+    res.status(200).json({ success: true, organizer: formatOrganizer(organizer) })
   } catch (error) {
-    console.error("Get organizer profile error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Update Organizer Profile
-exports.updateOrganizerProfile = async (req, res) => {
+// PUT /api/organizers/profile
+exports.updateOrganizerProfile = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { companyName, description, logo, website, socialMedia, address, region } = req.body
-
-    const organizer = await Organizer.findOne({
-      where: { userId },
-    })
-
-    if (!organizer) {
-      return res.status(404).json({
-        success: false,
-        message: "Organizer profile not found",
-      })
-    }
-
-    // Update organizer
-    await organizer.update({
-      companyName: companyName || organizer.companyName,
-      description: description !== undefined ? description : organizer.description,
-      logo: logo !== undefined ? logo : organizer.logo,
-      website: website !== undefined ? website : organizer.website,
-      socialMedia: socialMedia || organizer.socialMedia,
-      address: address !== undefined ? address : organizer.address,
-      region: region !== undefined ? region : organizer.region,
-    })
-
-    res.status(200).json({
-      success: true,
-      message: "Organizer profile updated successfully",
-      organizer: {
-        userId: organizer.userId,
-        companyName: organizer.companyName,
-        description: organizer.description,
-        logo: organizer.logo,
-        website: organizer.website,
-        socialMedia: organizer.socialMedia,
-        address: organizer.address,
-        region: organizer.region,
-      },
-    })
+    const organizer = await Organizer.findOne({ where: { userId: req.user.id } })
+    if (!organizer) return res.status(404).json({ success: false, message: "Organizer profile not found" })
+    const updates = {}
+    for (const key of PROFILE_FIELDS) if (req.body[key] !== undefined) updates[key] = req.body[key]
+    await organizer.update(updates)
+    res.status(200).json({ success: true, organizer: formatOrganizer(organizer) })
   } catch (error) {
-    console.error("Update organizer profile error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Get Organizer Events
-exports.getOrganizerEvents = async (req, res) => {
+// GET /api/organizers/events: every event the organizer owns, any status.
+exports.getOrganizerEvents = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { page = 1, limit = 10, status } = req.query
-    const { offset, limit: limitValue } = getPagination(page, limit)
-
-    // Build where clause
-    const whereClause = { organizerId: userId }
-    if (status) {
-      whereClause.status = status
-    }
-
-    // Get events
-    const { count, rows: events } = await Event.findAndCountAll({
-      where: whereClause,
+    const where = { organizerId: req.user.id }
+    if (req.query.status && req.query.status !== "all") where.approvalStatus = req.query.status
+    const events = await Event.findAll({
+      where,
+      include: [{ model: Organizer, include: [User] }, TicketType],
       order: [["eventDate", "ASC"]],
-      offset,
-      limit: limitValue,
     })
-
-    // Format events
-    const formattedEvents = events.map((event) => ({
-      id: event.id,
-      title: event.title,
-      date: event.eventDate,
-      location: event.location,
-      status: event.status,
-      attendees: event.attendees,
-      revenue: event.revenue,
-      image: event.image,
-    }))
-
-    const pagination = getPagingData(count, page, limitValue)
-
-    res.status(200).json({
-      success: true,
-      events: formattedEvents,
-      pagination,
-    })
+    res.status(200).json({ success: true, events: events.map((e) => formatEvent(e)) })
   } catch (error) {
-    console.error("Get organizer events error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Get Organizer Dashboard Stats
-exports.getOrganizerDashboard = async (req, res) => {
+// GET /api/organizers/dashboard: headline numbers from real bookings.
+exports.getOrganizerDashboard = async (req, res, next) => {
   try {
-    const userId = req.user.id
-
-    // Get total events
-    const totalEvents = await Event.count({
-      where: { organizerId: userId },
-    })
-
-    // Get total attendees
-    const totalAttendees =
-      (await Event.sum("attendees", {
-        where: { organizerId: userId },
-      })) || 0
-
-    // Get total revenue
-    const totalRevenue =
-      (await Event.sum("revenue", {
-        where: { organizerId: userId },
-      })) || 0
-
-    // Get upcoming events
-    const upcomingEvents = await Event.count({
-      where: {
-        organizerId: userId,
-        eventDate: { [Op.gte]: new Date() },
-      },
-    })
-
-    // Get pending approvals
-    const pendingApprovals = await Event.count({
-      where: {
-        organizerId: userId,
-        approvalStatus: "pending",
-      },
-    })
-
-    // Get recent events
-    const recentEvents = await Event.findAll({
-      where: { organizerId: userId },
-      order: [["createdAt", "DESC"]],
-      limit: 5,
-    })
-
-    // Get recent orders
-    const eventIds = await Event.findAll({
-      attributes: ["id"],
-      where: { organizerId: userId },
-    }).map((event) => event.id)
-
-    const recentOrders = await Order.findAll({
-      where: {
-        eventId: { [Op.in]: eventIds },
-      },
-      include: [
-        {
-          model: Event,
-          attributes: ["title"],
-        },
-        {
-          model: User,
-          attributes: ["name", "email"],
-        },
-      ],
-      order: [["createdAt", "DESC"]],
-      limit: 5,
-    })
-
-    // Format recent events
-    const formattedRecentEvents = recentEvents.map((event) => ({
-      id: event.id,
-      title: event.title,
-      date: event.eventDate,
-      status: event.status,
-      attendees: event.attendees,
-    }))
-
-    // Format recent orders
-    const formattedRecentOrders = recentOrders.map((order) => ({
-      id: order.id,
-      eventTitle: order.Event.title,
-      userName: order.User.name,
-      userEmail: order.User.email,
-      totalAmount: order.totalAmount,
-      status: order.status,
-      purchaseDate: order.purchaseDate,
-    }))
-
+    const events = await Event.findAll({ where: { organizerId: req.user.id }, include: [TicketType] })
+    const eventIds = events.map((e) => e.id)
+    const now = new Date()
+    const bookingWhere = { eventId: { [Op.in]: eventIds.length ? eventIds : [null] }, status: { [Op.in]: ["confirmed", "checked-in"] } }
+    const [ticketsSold, revenue, recent] = await Promise.all([
+      Booking.sum("quantity", { where: bookingWhere }),
+      Booking.sum("totalPrice", { where: bookingWhere }),
+      Booking.findAll({
+        where: bookingWhere,
+        include: [
+          { model: Event, attributes: ["id", "title", "eventDate", "time", "location", "region", "image", "organizerId"] },
+          { model: TicketType, attributes: ["id", "name", "price", "currency"] },
+          { model: User, attributes: ["id", "name", "email", "phone"] },
+        ],
+        order: [["createdAt", "DESC"]],
+        limit: 5,
+      }),
+    ])
+    const organizer = await Organizer.findOne({ where: { userId: req.user.id } })
     res.status(200).json({
       success: true,
+      approvalStatus: organizer?.approvalStatus,
       stats: {
-        totalEvents,
-        totalAttendees,
-        totalRevenue,
-        upcomingEvents,
-        pendingApprovals,
+        totalEvents: events.length,
+        upcomingEvents: events.filter((e) => new Date(e.eventDate) >= now && e.approvalStatus === "approved").length,
+        ticketsSold: toNumber(ticketsSold),
+        revenue: toNumber(revenue),
       },
-      recentEvents: formattedRecentEvents,
-      recentOrders: formattedRecentOrders,
+      upcoming: events
+        .filter((e) => new Date(e.eventDate) >= now)
+        .sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate))
+        .slice(0, 5)
+        .map((e) => formatEvent(e)),
+      recentBookings: recent.map(formatBooking),
     })
   } catch (error) {
-    console.error("Get organizer dashboard error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Get Event Attendees
-exports.getEventAttendees = async (req, res) => {
+// GET /api/organizers/attendees?eventId=: confirmed attendees across the organizer's events.
+exports.getAllAttendees = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { eventId } = req.params
-    const { page = 1, limit = 10, search } = req.query
-    const { offset, limit: limitValue } = getPagination(page, limit)
-
-    // Check if event belongs to organizer
-    const event = await Event.findOne({
-      where: { id: eventId, organizerId: userId },
-    })
-
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: "Event not found or you don't have permission to view its attendees",
-      })
-    }
-
-    // Build where clause for order items
-    const orderItemWhereClause = {}
-    if (search) {
-      orderItemWhereClause[Op.or] = [
-        { attendeeName: { [Op.like]: `%${search}%` } },
-        { attendeeEmail: { [Op.like]: `%${search}%` } },
-      ]
-    }
-
-    // Get attendees
-    const { count, rows: orderItems } = await OrderItem.findAndCountAll({
-      where: orderItemWhereClause,
+    const eventWhere = { organizerId: req.user.id }
+    if (req.query.eventId) eventWhere.id = req.query.eventId
+    const bookings = await Booking.findAll({
+      where: { status: { [Op.in]: ["confirmed", "checked-in", "cancelled"] } },
       include: [
-        {
-          model: Order,
-          where: { eventId },
-          attributes: ["id", "purchaseDate"],
-        },
-        {
-          model: TicketType,
-          attributes: ["name"],
-        },
+        { model: Event, where: eventWhere, attributes: ["id", "title", "eventDate", "time", "location", "region", "image", "organizerId"] },
+        { model: TicketType, attributes: ["id", "name", "price", "currency"] },
+        { model: User, attributes: ["id", "name", "email", "phone"] },
       ],
       order: [["createdAt", "DESC"]],
-      offset,
-      limit: limitValue,
     })
-
-    // Format attendees
-    const attendees = orderItems.map((item) => ({
-      id: item.id,
-      name: item.attendeeName,
-      email: item.attendeeEmail,
-      ticketType: item.TicketType.name,
-      orderId: item.Order.id,
-      orderDate: item.Order.purchaseDate,
-      checkInStatus: item.checkInStatus,
-      checkInTime: item.checkInTime,
-    }))
-
-    const pagination = getPagingData(count, page, limitValue)
-
-    res.status(200).json({
-      success: true,
-      attendees,
-      pagination,
-    })
+    res.status(200).json({ success: true, attendees: bookings.map(formatBooking) })
   } catch (error) {
-    console.error("Get event attendees error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Check In Attendee
-exports.checkInAttendee = async (req, res) => {
+// GET /api/organizers/events/:eventId/attendees
+exports.getEventAttendees = async (req, res, next) => {
+  req.query.eventId = req.params.eventId
+  const event = await Event.findByPk(req.params.eventId).catch(() => null)
+  if (!event || event.organizerId !== req.user.id) {
+    return res.status(404).json({ success: false, message: "Event not found" })
+  }
+  return exports.getAllAttendees(req, res, next)
+}
+
+// PUT /api/organizers/events/:eventId/attendees/:attendeeId/check-in (attendeeId is the booking id)
+exports.checkInAttendee = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { eventId, attendeeId } = req.params
-
-    // Check if event belongs to organizer
-    const event = await Event.findOne({
-      where: { id: eventId, organizerId: userId },
+    const booking = await Booking.findOne({
+      where: { id: req.params.attendeeId, eventId: req.params.eventId },
+      include: [Event],
     })
-
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: "Event not found or you don't have permission to check in attendees",
-      })
+    if (!booking || booking.Event.organizerId !== req.user.id) {
+      return res.status(404).json({ success: false, message: "Booking not found" })
     }
-
-    // Find order item
-    const orderItem = await OrderItem.findOne({
-      where: { id: attendeeId },
-      include: [
-        {
-          model: Order,
-          where: { eventId },
-        },
-      ],
-    })
-
-    if (!orderItem) {
-      return res.status(404).json({
-        success: false,
-        message: "Attendee not found",
-      })
+    if (booking.status !== "confirmed") {
+      return res.status(400).json({ success: false, message: `A ${booking.status} booking cannot be checked in` })
     }
-
-    // Check if already checked in
-    if (orderItem.checkInStatus === "checked_in") {
-      return res.status(400).json({
-        success: false,
-        message: "Attendee already checked in",
-      })
-    }
-
-    // Check if cancelled
-    if (orderItem.checkInStatus === "cancelled") {
-      return res.status(400).json({
-        success: false,
-        message: "Cannot check in a cancelled ticket",
-      })
-    }
-
-    // Update check-in status
-    await orderItem.update({
-      checkInStatus: "checked_in",
-      checkInTime: new Date(),
-    })
-
-    res.status(200).json({
-      success: true,
-      message: "Attendee checked in successfully",
-      attendee: {
-        id: orderItem.id,
-        checkInStatus: orderItem.checkInStatus,
-        checkInTime: orderItem.checkInTime,
-      },
-    })
+    await booking.update({ status: "checked-in", checkedInAt: new Date() })
+    res.status(200).json({ success: true, message: "Attendee checked in" })
   } catch (error) {
-    console.error("Check in attendee error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }
 
-// Get Event Analytics
-exports.getEventAnalytics = async (req, res) => {
+// GET /api/organizers/events/:id/analytics: ticket sales per type for one event.
+exports.getEventAnalytics = async (req, res, next) => {
   try {
-    const userId = req.user.id
-    const { id } = req.params
-
-    // Check if event belongs to organizer
-    const event = await Event.findOne({
-      where: { id, organizerId: userId },
-    })
-
-    if (!event) {
-      return res.status(404).json({
-        success: false,
-        message: "Event not found or you don't have permission to view its analytics",
-      })
-    }
-
-    // Get attendee stats
-    const totalAttendees = event.attendees
-    const checkedInCount = await OrderItem.count({
-      include: [
-        {
-          model: Order,
-          where: { eventId: id },
-        },
-      ],
-      where: { checkInStatus: "checked_in" },
-    })
-    const percentCheckedIn = totalAttendees > 0 ? (checkedInCount / totalAttendees) * 100 : 0
-
-    // Get ticket stats
-    const ticketTypes = await TicketType.findAll({
-      where: { eventId: id },
-    })
-
-    const ticketStats = {
-      totalSold: ticketTypes.reduce((sum, tt) => sum + tt.sold, 0),
-      totalAvailable: ticketTypes.reduce((sum, tt) => sum + tt.quantity, 0),
-      percentSold: 0,
-      byType: ticketTypes.map((tt) => ({
-        name: tt.name,
-        sold: tt.sold,
-        available: tt.quantity,
-        revenue: tt.revenue,
-      })),
-    }
-
-    ticketStats.percentSold =
-      ticketStats.totalAvailable > 0 ? (ticketStats.totalSold / ticketStats.totalAvailable) * 100 : 0
-
-    // Get financial stats
-    const financialStats = {
-      totalRevenue: event.revenue,
-      totalExpenses: event.expenses,
-      profit: event.profit,
-      averageTicketPrice: ticketStats.totalSold > 0 ? event.revenue / ticketStats.totalSold : 0,
-    }
-
-    // Get time stats (sales by day)
-    const orders = await Order.findAll({
-      where: { eventId: id },
-      attributes: [
-        [sequelize.fn("DATE", sequelize.col("purchaseDate")), "date"],
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
-        [sequelize.fn("SUM", sequelize.col("totalAmount")), "revenue"],
-      ],
-      group: [sequelize.fn("DATE", sequelize.col("purchaseDate"))],
-      order: [[sequelize.fn("DATE", sequelize.col("purchaseDate")), "ASC"]],
-    })
-
-    const salesByDay = orders.map((order) => ({
-      date: order.getDataValue("date"),
-      count: Number.parseInt(order.getDataValue("count")),
-      revenue: Number.parseFloat(order.getDataValue("revenue")),
-    }))
-
+    const event = await Event.findOne({ where: { id: req.params.id, organizerId: req.user.id }, include: [TicketType] })
+    if (!event) return res.status(404).json({ success: false, message: "Event not found" })
+    const formatted = formatEvent(event)
+    const revenue = formatted.ticketTypes.reduce((sum, t) => sum + t.sold * t.price, 0)
     res.status(200).json({
       success: true,
       analytics: {
-        attendeeStats: {
-          total: totalAttendees,
-          checkedIn: checkedInCount,
-          percentCheckedIn,
-        },
-        ticketStats,
-        financialStats,
-        timeStats: {
-          salesByDay,
-        },
+        eventId: event.id,
+        attendees: formatted.attendees,
+        capacity: formatted.ticketTypes.reduce((sum, t) => sum + t.quantity, 0),
+        revenue,
+        ticketTypes: formatted.ticketTypes.map((t) => ({ name: t.name, sold: t.sold, quantity: t.quantity, price: t.price })),
       },
     })
   } catch (error) {
-    console.error("Get event analytics error:", error)
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    next(error)
   }
 }

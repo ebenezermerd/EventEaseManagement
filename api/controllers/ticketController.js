@@ -1,5 +1,13 @@
-const { TicketType, Event } = require("../models/association")
-const { generateRandomString } = require("../utils/helpers")
+const { TicketType, Event, Booking } = require("../models/association")
+const { formatTicket } = require("../utils/eventFormat")
+
+// Only these fields may be set by organizers; sold counts are managed by bookings.
+const TICKET_FIELDS = ["name", "description", "price", "quantity", "available", "benefits", "salesStartDate", "salesEndDate"]
+const pickTicketFields = (body) => {
+  const data = {}
+  for (const key of TICKET_FIELDS) if (body[key] !== undefined) data[key] = body[key]
+  return data
+}
 
 // Get all ticket types for an event
 exports.getEventTicketTypes = async (req, res) => {
@@ -17,7 +25,7 @@ exports.getEventTicketTypes = async (req, res) => {
       order: [["price", "ASC"]],
     })
 
-    res.status(200).json({ success: true, ticketTypes })
+    res.status(200).json({ success: true, ticketTypes: ticketTypes.map(formatTicket) })
   } catch (error) {
     console.error("Error fetching ticket types:", error)
     res.status(500).json({ success: false, message: error.message })
@@ -43,9 +51,13 @@ exports.createTicketType = async (req, res) => {
     }
 
     // Create the ticket type
+    if (!req.body.name || req.body.price === undefined || !req.body.quantity) {
+      return res.status(400).json({ success: false, message: "name, price and quantity are required" })
+    }
     const ticketType = await TicketType.create({
-      ...req.body,
+      ...pickTicketFields(req.body),
       eventId,
+      sold: 0,
     })
 
     res.status(201).json({
@@ -83,7 +95,11 @@ exports.updateTicketType = async (req, res) => {
     }
 
     // Update the ticket type
-    await ticketType.update(req.body)
+    const updates = pickTicketFields(req.body)
+    if (updates.quantity !== undefined && Number(updates.quantity) < ticketType.sold) {
+      return res.status(400).json({ success: false, message: "Quantity cannot be lower than tickets already sold" })
+    }
+    await ticketType.update(updates)
 
     res.status(200).json({
       success: true,
@@ -120,6 +136,11 @@ exports.deleteTicketType = async (req, res) => {
     }
 
     // Delete the ticket type
+    const bookings = await Booking.count({ where: { ticketTypeId: ticketType.id } })
+    if (bookings > 0) {
+      await ticketType.update({ available: false })
+      return res.status(200).json({ success: true, message: "Ticket type has bookings, so sales were closed instead" })
+    }
     await ticketType.destroy()
 
     res.status(200).json({

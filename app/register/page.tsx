@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
@@ -20,12 +20,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { toast } from "@/components/ui/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState("attendee")
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("type") === "organizer") setUserType("organizer")
+  }, [])
 
   // Attendee form state
   const [attendeeFormData, setAttendeeFormData] = useState({
@@ -51,13 +56,7 @@ export default function RegisterPage() {
     region: "",
   })
 
-const [files, setFiles] = useState<{
-  logo: File | null;
-  verificationDocuments: File[];
-}>({
-  logo: null,
-  verificationDocuments: [],
-})
+  const { register } = useAuth()
 
   const handleAttendeeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -69,107 +68,29 @@ const [files, setFiles] = useState<{
     setOrganizerFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, files: fileList } = e.target
-    
-    if (name === "logo" && fileList && fileList.length > 0) {
-      setFiles((prev) => ({ ...prev, logo: fileList[0] }))
-    } else if (name === "verificationDocuments" && fileList && fileList.length > 0) {
-      const selectedFiles = Array.from(fileList)
-      setFiles((prev) => ({ ...prev, verificationDocuments: selectedFiles }))
-    }
+  const fail = (description: string) => {
+    toast({ title: "Could not create account", description, variant: "destructive" })
+    return false
   }
 
-  const validateAttendeeForm = () => {
-    const { name, email, password, confirmPassword } = attendeeFormData
-    if (!name || !email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
-      return false
-    }
-    if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      })
-      return false
-    }
-    return true
-  }
-
-  const validateOrganizerForm = () => {
-    const { name, email, password, confirmPassword, companyName, tinNumber } = organizerFormData
-    
-    if (!name || !email || !password || !companyName || !tinNumber) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
-      return false
-    }
-    
-    if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      })
-      return false
-    }
-    
-    if (!files.verificationDocuments.length) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one verification document.",
-        variant: "destructive",
-      })
-      return false
-    }
-    
+  const validatePasswords = (password: string, confirmPassword: string) => {
+    if (password.length < 8) return fail("Use at least 8 characters for your password.")
+    if (password !== confirmPassword) return fail("Passwords do not match.")
     return true
   }
 
   const handleAttendeeSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateAttendeeForm()) return
-    
+    const { name, email, password, confirmPassword, phone } = attendeeFormData
+    if (!name || !email || !password) return fail("Please fill in all required fields.")
+    if (!validatePasswords(password, confirmPassword)) return
+
     setIsLoading(true)
     try {
-      // Replace with actual API endpoint
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...attendeeFormData,
-          role: "attendee"
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed")
-      }
-      
-      toast({
-        title: "Success",
-        description: "Account created successfully.",
-      })
-      
-      // Redirect to login
-      router.push("/login")
+      await register({ name, email, password, phone: phone || undefined, role: "attendee" })
+      toast({ title: "Welcome to EventEase", description: "Your account is ready." })
     } catch (error) {
-      console.error("Registration error:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to register. Please try again.",
-        variant: "destructive",
-      })
+      fail(error instanceof Error ? error.message : "Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -177,58 +98,22 @@ const [files, setFiles] = useState<{
 
   const handleOrganizerSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateOrganizerForm()) return
-    
+    const { confirmPassword, ...data } = organizerFormData
+    if (!data.name || !data.email || !data.password || !data.companyName || !data.tinNumber) {
+      return fail("Please fill in all required fields.")
+    }
+    if (!validatePasswords(data.password, confirmPassword)) return
+
     setIsLoading(true)
     try {
-      // Create form data for multipart/form-data submission
-      const formData = new FormData()
-      
-      // Add all text fields
-      Object.entries(organizerFormData).forEach(([key, value]) => {
-        if (key !== "confirmPassword") {
-          formData.append(key, value)
-        }
-      })
-      
-      // Add role
-      formData.append("role", "organizer")
-      
-      // Add files
-      if (files.logo) {
-        formData.append("logo", files.logo)
-      }
-      
-      files.verificationDocuments.forEach((file, index) => {
-        formData.append(`verificationDocuments`, file)
-      })
-      
-      // Replace with actual API endpoint
-      const response = await fetch("/api/organizers/apply", {
-        method: "POST",
-        body: formData,
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed")
-      }
-      
+      const clean = Object.fromEntries(Object.entries(data).filter(([, v]) => v !== "")) as typeof data
+      await register({ ...clean, role: "organizer" })
       toast({
-        title: "Success",
-        description: "Organizer application submitted successfully. Your account is under review.",
+        title: "Application received",
+        description: "An admin will review your organizer account before you can publish events.",
       })
-      
-      // Redirect to organizer dashboard (they'll see a pending status message)
-      router.push("/dashboard/organizer")
     } catch (error) {
-      console.error("Registration error:", error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to register. Please try again.",
-        variant: "destructive",
-      })
+      fail(error instanceof Error ? error.message : "Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -477,36 +362,10 @@ const [files, setFiles] = useState<{
                       />
                     </div>
                     
-                    <div className="space-y-2">
-                      <Label htmlFor="organizer-logo">Company Logo (Optional)</Label>
-                      <Input
-                        id="organizer-logo"
-                        name="logo"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Recommended: Square image (1:1 ratio), max 2MB
-                      </p>
+                    <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground sm:col-span-2">
+                      Document upload is not available yet. An admin reviews your company name and TIN before you can publish events.
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="organizer-documents">Verification Documents</Label>
-                      <Input
-                        id="organizer-documents"
-                        name="verificationDocuments"
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        multiple
-                        onChange={handleFileChange}
-                        required
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Business registration, license, or other verification documents. PDF or images, max 5MB each.
-                      </p>
-                    </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="organizer-password">Password</Label>
                       <div className="relative">

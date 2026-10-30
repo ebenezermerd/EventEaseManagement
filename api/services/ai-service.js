@@ -1,11 +1,9 @@
-// services/ai.service.js
+// services/ai-service.js
+// Event content generation through the Vercel AI Gateway (OpenAI compatible).
+// On Vercel the gateway authenticates with the project's OIDC token; locally
+// set AI_GATEWAY_API_KEY. Without either, AI endpoints answer 503.
 const { v4: uuidv4 } = require("uuid")
-const axios = require("axios")
-const fs = require("fs")
-const path = require("path")
-const { GoogleGenerativeAI } = require("@google/generative-ai")
 const { OpenAI } = require("openai")
-const Anthropic = require("@anthropic-ai/sdk")
 const aiConfig = require("../config/ai.config")
 const AIGenerationLog = require("../models/aiGenerationLog")
 const EventTemplate = require("../models/eventTemplate")
@@ -22,37 +20,13 @@ class AIService {
    * Set up logging
    */
   setupLogging() {
+    // Serverless functions have a read only filesystem, so log to stdout only.
     this.logger = {
       log: (message) => {
-        if (aiConfig.logging.enabled) {
-          console.log(`[AI Service] ${message}`)
-
-          if (aiConfig.logging.logToFile) {
-            const logDir = path.dirname(aiConfig.logging.logFilePath)
-            if (!fs.existsSync(logDir)) {
-              fs.mkdirSync(logDir, { recursive: true })
-            }
-
-            fs.appendFileSync(aiConfig.logging.logFilePath, `${new Date().toISOString()} - ${message}\n`)
-          }
-        }
+        if (aiConfig.logging.enabled) console.log(`[AI Service] ${message}`)
       },
       error: (message, error) => {
-        if (aiConfig.logging.enabled && aiConfig.logging.logErrors) {
-          console.error(`[AI Service Error] ${message}`, error)
-
-          if (aiConfig.logging.logToFile) {
-            const logDir = path.dirname(aiConfig.logging.logFilePath)
-            if (!fs.existsSync(logDir)) {
-              fs.mkdirSync(logDir, { recursive: true })
-            }
-
-            fs.appendFileSync(
-              aiConfig.logging.logFilePath,
-              `${new Date().toISOString()} - ERROR: ${message} - ${error.message}\n`,
-            )
-          }
-        }
+        if (aiConfig.logging.enabled && aiConfig.logging.logErrors) console.error(`[AI Service Error] ${message}`, error?.message)
       },
     }
   }
@@ -62,18 +36,7 @@ class AIService {
    * @returns {Object} AI client
    */
   getAIClient() {
-    const provider = aiConfig.defaultProvider
-
-    switch (provider) {
-      case "gemini":
-        return new GeminiAIClient(this.logger)
-      case "openai":
-        return new OpenAIClient(this.logger)
-      case "anthropic":
-        return new AnthropicAIClient(this.logger)
-      default:
-        throw new Error(`Unsupported AI provider: ${provider}`)
-    }
+    return new GatewayAIClient(this.logger)
   }
 
   /**
@@ -557,129 +520,10 @@ class AIService {
    * @param {String} size - Image size
    * @returns {Object} Generated image URL
    */
-  async generateImage(prompt, size = "1024x1024") {
-    const provider = aiConfig.imageGeneration.provider
-
-    switch (provider) {
-      case "stability":
-        return await this.generateStabilityImage(prompt, size)
-      case "openai":
-        return await this.generateOpenAIImage(prompt, size)
-      case "midjourney":
-        return await this.generateMidjourneyImage(prompt, size)
-      default:
-        throw new Error(`Unsupported image generation provider: ${provider}`)
-    }
-  }
-
-  /**
-   * Generate image with Stability AI
-   * @param {String} prompt - Image prompt
-   * @param {String} size - Image size
-   * @returns {Object} Generated image URL
-   */
-  async generateStabilityImage(prompt, size) {
-    try {
-      const config = aiConfig.imageGeneration.stability
-
-      // For testing purposes, we'll simulate a successful response regardless of config
-      this.logger.log(`Generating mock image with prompt: ${prompt}`)
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Return a mock image URL
-      return {
-        success: true,
-        imageUrl: `https://example.com/generated-images/${Date.now()}.png`,
-      }
-    } catch (error) {
-      this.logger.error("Error generating image with Stability AI:", error)
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
-  }
-
-  /**
-   * Generate image with OpenAI
-   * @param {String} prompt - Image prompt
-   * @param {String} size - Image size
-   * @returns {Object} Generated image URL
-   */
-  async generateOpenAIImage(prompt, size) {
-    try {
-      const config = aiConfig.imageGeneration.openai
-
-      if (!config.enabled) {
-        throw new Error("OpenAI image generation is not enabled")
-      }
-
-      if (!config.apiKey) {
-        throw new Error("OpenAI API key is not configured")
-      }
-
-      this.logger.log(`Generating image with OpenAI: ${prompt}`)
-
-      // In a real implementation, you would call the OpenAI API
-      // For now, we'll simulate a successful response
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
-      // Return a mock image URL
-      return {
-        success: true,
-        imageUrl: `https://example.com/generated-images/${Date.now()}.png`,
-      }
-    } catch (error) {
-      this.logger.error("Error generating image with OpenAI:", error)
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
-  }
-
-  /**
-   * Generate image with Midjourney
-   * @param {String} prompt - Image prompt
-   * @param {String} size - Image size
-   * @returns {Object} Generated image URL
-   */
-  async generateMidjourneyImage(prompt, size) {
-    try {
-      const config = aiConfig.imageGeneration.midjourney
-
-      if (!config.enabled) {
-        throw new Error("Midjourney image generation is not enabled")
-      }
-
-      if (!config.apiKey) {
-        throw new Error("Midjourney API key is not configured")
-      }
-
-      this.logger.log(`Generating image with Midjourney: ${prompt}`)
-
-      // In a real implementation, you would call the Midjourney API
-      // For now, we'll simulate a successful response
-
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 5000))
-
-      // Return a mock image URL
-      return {
-        success: true,
-        imageUrl: `https://example.com/generated-images/${Date.now()}.png`,
-      }
-    } catch (error) {
-      this.logger.error("Error generating image with Midjourney:", error)
-      return {
-        success: false,
-        error: error.message,
-      }
-    }
+  async generateImage() {
+    const error = new Error("AI image generation is not enabled on this deployment")
+    error.status = 503
+    throw error
   }
 
   /**
@@ -729,188 +573,44 @@ class AIService {
 }
 
 /**
- * Gemini AI Client
+ * Vercel AI Gateway client (OpenAI compatible chat completions).
  */
-class GeminiAIClient {
+class GatewayAIClient {
   constructor(logger) {
     this.logger = logger
-    this.config = aiConfig.providers.gemini
+    this.config = aiConfig.providers.gateway
+  }
 
-    if (!this.config.enabled) {
-      throw new Error("Gemini AI is not enabled")
-    }
-
-    if (!this.config.apiKey) {
-      throw new Error("Gemini API key is not configured")
-    }
-
+  async apiKey() {
+    if (process.env.AI_GATEWAY_API_KEY) return process.env.AI_GATEWAY_API_KEY
     try {
-      this.genAI = new GoogleGenerativeAI(this.config.apiKey)
-      this.model = this.genAI.getGenerativeModel({ model: this.config.model })
-      this.currentModelName = this.config.model
-    } catch (error) {
-      this.logger.error("Error initializing Gemini AI client:", error)
-      throw new Error(`Failed to initialize Gemini AI client: ${error.message}`)
+      const { getVercelOidcToken } = require("@vercel/oidc")
+      return await getVercelOidcToken()
+    } catch (_) {
+      return process.env.VERCEL_OIDC_TOKEN || null
     }
   }
 
   async generateContent(prompt) {
-    try {
-      this.logger.log(`Generating content with Gemini model: ${this.currentModelName}`)
-
-      if (aiConfig.logging.logPrompts) {
-        this.logger.log(`Prompt: ${prompt}`)
-      }
-
-      // Get the model instance
-      const result = await this.model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: this.config.temperature,
-          topP: this.config.topP,
-          maxOutputTokens: this.config.maxTokens,
-        },
-      });
-
-      const response = result.response
-      const responseText = response.text()
-
-      if (aiConfig.logging.logResponses) {
-        this.logger.log(`Response: ${responseText.substring(0, 500)}...`)
-      }
-
-      return {
-        text: responseText,
-        tokensUsed: response.usageMetadata?.totalTokens || 0,
-        model: this.currentModelName,
-      }
-    } catch (error) {
-      this.logger.error(`Error generating content with Gemini model ${this.currentModelName}:`, error)
-      
-      // Check if it's a quota error
-      if (error.message && error.message.includes("429") && error.message.includes("quota")) {
-        throw new Error("API quota exceeded. Please try again later or upgrade your API plan.");
-      }
-      
-      // Check if it's a model not found error
-      if (error.message && error.message.includes("404") && error.message.includes("not found")) {
-        throw new Error(`Model ${this.currentModelName} not found or not supported. Please check your configuration.`);
-      }
-      
-      throw error;
-    }
-  }
-}
-
-/**
- * OpenAI Client
- */
-class OpenAIClient {
-  constructor(logger) {
-    this.logger = logger
-    this.config = aiConfig.providers.openai
-
-    if (!this.config.enabled) {
-      throw new Error("OpenAI is not enabled")
-    }
-
-    if (!this.config.apiKey) {
-      throw new Error("OpenAI API key is not configured")
-    }
-
-    try {
-      this.client = new OpenAI({ apiKey: this.config.apiKey })
-    } catch (error) {
-      this.logger.error("Error initializing OpenAI client:", error)
-      throw new Error(`Failed to initialize OpenAI client: ${error.message}`)
-    }
-  }
-
-  async generateContent(prompt) {
-    try {
-      this.logger.log(`Generating content with OpenAI model: ${this.config.model}`)
-
-      if (aiConfig.logging.logPrompts) {
-        this.logger.log(`Prompt: ${prompt}`)
-      }
-
-      const response = await this.client.chat.completions.create({
-        model: this.config.model,
-        messages: [{ role: "user", content: prompt }],
-        temperature: this.config.temperature,
-        max_tokens: this.config.maxTokens,
-        top_p: this.config.topP,
-      })
-
-      const responseText = response.choices[0].message.content
-
-      if (aiConfig.logging.logResponses) {
-        this.logger.log(`Response: ${responseText.substring(0, 500)}...`)
-      }
-
-      return {
-        text: responseText,
-        tokensUsed: response.usage?.total_tokens || 0,
-      }
-    } catch (error) {
-      this.logger.error("Error generating content with OpenAI:", error)
+    const apiKey = await this.apiKey()
+    if (!apiKey) {
+      const error = new Error("AI features are not configured on this deployment")
+      error.status = 503
       throw error
     }
-  }
-}
-
-/**
- * Anthropic AI Client
- */
-class AnthropicAIClient {
-  constructor(logger) {
-    this.logger = logger
-    this.config = aiConfig.providers.anthropic
-
-    if (!this.config.enabled) {
-      throw new Error("Anthropic AI is not enabled")
-    }
-
-    if (!this.config.apiKey) {
-      throw new Error("Anthropic API key is not configured")
-    }
-
-    try {
-      this.client = new Anthropic({ apiKey: this.config.apiKey })
-    } catch (error) {
-      this.logger.error("Error initializing Anthropic AI client:", error)
-      throw new Error(`Failed to initialize Anthropic AI client: ${error.message}`)
-    }
-  }
-
-  async generateContent(prompt) {
-    try {
-      this.logger.log(`Generating content with Anthropic model: ${this.config.model}`)
-
-      if (aiConfig.logging.logPrompts) {
-        this.logger.log(`Prompt: ${prompt}`)
-      }
-
-      const response = await this.client.messages.create({
-        model: this.config.model,
-        max_tokens: this.config.maxTokens,
-        messages: [{ role: "user", content: prompt }],
-        temperature: this.config.temperature,
-      })
-
-      const responseText = response.content[0].text
-
-      if (aiConfig.logging.logResponses) {
-        this.logger.log(`Response: ${responseText.substring(0, 500)}...`)
-      }
-
-      return {
-        text: responseText,
-        tokensUsed: response.usage?.input_tokens + response.usage?.output_tokens || 0,
-      }
-    } catch (error) {
-      this.logger.error("Error generating content with Anthropic:", error)
-      throw error
+    const client = new OpenAI({ apiKey, baseURL: this.config.baseURL, timeout: this.config.timeout })
+    this.logger.log(`Generating content with ${this.config.model} via AI Gateway`)
+    const response = await client.chat.completions.create({
+      model: this.config.model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: this.config.temperature,
+      max_tokens: this.config.maxTokens,
+      top_p: this.config.topP,
+    })
+    return {
+      text: response.choices?.[0]?.message?.content || "",
+      tokensUsed: response.usage?.total_tokens || 0,
+      model: this.config.model,
     }
   }
 }

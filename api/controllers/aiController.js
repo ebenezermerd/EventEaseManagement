@@ -37,7 +37,7 @@ exports.generateEventContent = async (req, res) => {
     })
   } catch (error) {
     console.error("Error generating event content:", error)
-    res.status(error.message.includes("rate limit") ? 429 : 500).json({
+    res.status(error.status || (error.message.includes("rate limit") ? 429 : 500)).json({
       success: false,
       message: error.message,
     })
@@ -69,7 +69,7 @@ exports.generateEventImage = async (req, res) => {
     })
   } catch (error) {
     console.error("Error generating event image:", error)
-    res.status(error.message.includes("rate limit") ? 429 : 500).json({
+    res.status(error.status || (error.message.includes("rate limit") ? 429 : 500)).json({
       success: false,
       message: error.message,
     })

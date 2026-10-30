@@ -1,36 +1,15 @@
 // config/ai.config.js
 module.exports = {
-  defaultProvider: process.env.AI_PROVIDER || "gemini",
+  defaultProvider: "gateway",
 
   providers: {
-    gemini: {
-      apiKey: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
-      maxTokens: 8192,
-      temperature: 0.7,
-      topP: 0.95,
-      enabled: true,
-      timeout: 30000, // 30 seconds
-    },
-
-    openai: {
-      apiKey: process.env.OPENAI_API_KEY,
-      model: process.env.OPENAI_MODEL || "gpt-4o",
+    gateway: {
+      baseURL: process.env.AI_GATEWAY_BASE_URL || "https://ai-gateway.vercel.sh/v1",
+      model: process.env.AI_MODEL || "google/gemini-2.5-flash",
       maxTokens: 4096,
       temperature: 0.7,
       topP: 0.95,
-      enabled: process.env.OPENAI_API_KEY ? true : false,
-      timeout: 60000, // 60 seconds
-    },
-
-    anthropic: {
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      model: process.env.ANTHROPIC_MODEL || "claude-3-opus",
-      maxTokens: 4096,
-      temperature: 0.7,
-      topP: 0.95,
-      enabled: process.env.ANTHROPIC_API_KEY ? true : false,
-      timeout: 60000, // 60 seconds
+      timeout: 45000,
     },
   },
 
@@ -71,7 +50,7 @@ module.exports = {
     logTokenUsage: true,
     logErrors: true,
     logToDatabase: true,
-    logToFile: process.env.NODE_ENV === "production",
+    logToFile: false,
     logFilePath: "./logs/ai-requests.log",
   },
 

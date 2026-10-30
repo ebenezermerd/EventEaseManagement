@@ -1,246 +1,131 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BarChart, Calendar, CalendarDays, Clock, DollarSign, TrendingUp, User, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
+"use client"
+
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Calendar, CalendarDays, Clock, DollarSign, Loader2, Plus, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { StatCard } from "@/components/dashboard/stat-card"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { useAuth } from "@/contexts/AuthContext"
+import { api, formatBirr, formatEventDate, type Booking, type EventItem } from "@/lib/api"
+
+interface DashboardData {
+  approvalStatus: "pending" | "approved" | "rejected"
+  stats: { totalEvents: number; upcomingEvents: number; ticketsSold: number; revenue: number }
+  upcoming: EventItem[]
+  recentBookings: Booking[]
+}
 
 export default function OrganizerDashboardPage() {
+  const { user } = useAuth()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api<DashboardData>("/api/organizers/dashboard")
+      .then(setData)
+      .catch((e) => setError(e.message))
+  }, [])
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between pb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Organizer Dashboard</h1>
-          <p className="text-muted-foreground">Welcome back, Organizer!</p>
+          <p className="text-muted-foreground">Welcome back, {user?.name.split(" ")[0]}</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium">Today:</span>
-          <span className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </span>
-        </div>
+        {data?.approvalStatus === "approved" && (
+          <Button asChild>
+            <Link href="/dashboard/organizer/events/create">
+              <Plus className="mr-2 h-4 w-4" /> Create event
+            </Link>
+          </Button>
+        )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <Calendar className="h-4 w-4 text-primary-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500 font-medium">+2</span>
-              <span className="ml-1">from last month</span>
-            </p>
+      {data && data.approvalStatus !== "approved" && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+          <CardContent className="flex items-start gap-3 p-4 text-sm">
+            <Clock className="mt-0.5 h-5 w-5 text-amber-600" />
+            <div>
+              <p className="font-semibold">
+                {data.approvalStatus === "pending" ? "Your organizer account is waiting for approval" : "Your organizer application was rejected"}
+              </p>
+              <p className="text-muted-foreground">
+                {data.approvalStatus === "pending"
+                  ? "An admin reviews new organizers. You can publish events as soon as you are approved."
+                  : "Contact support if you think this is a mistake."}
+              </p>
+            </div>
           </CardContent>
         </Card>
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Attendees</CardTitle>
-            <Users className="h-4 w-4 text-primary-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500 font-medium">+18%</span>
-              <span className="ml-1">from last month</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">ETB 56,789</div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center">
-              <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
-              <span className="text-green-500 font-medium">+12%</span>
-              <span className="ml-1">from last month</span>
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-            <CalendarDays className="h-4 w-4 text-primary-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground mt-1">Next event in 3 days</p>
-          </CardContent>
-        </Card>
-      </div>
+      )}
 
-      <div className="grid gap-4 md:grid-cols-7">
-        <Card className="md:col-span-4 border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex justify-between items-center">
-            <div>
-              <CardTitle>Revenue Overview</CardTitle>
-              <CardDescription>Compare event revenue over time</CardDescription>
-            </div>
-            <Button variant="outline" size="sm">
-              View Details
-            </Button>
-          </CardHeader>
-          <CardContent className="h-[300px] flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <BarChart className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <p>Revenue chart will appear here</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-3 border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex justify-between items-center">
-            <div>
-              <CardTitle>Upcoming Events</CardTitle>
-              <CardDescription>Your schedule for the next few days</CardDescription>
-            </div>
-            <Link href="/dashboard/organizer/events">
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { id: 1, name: "Addis Tech Summit 2024", date: "May 15, 2024", time: "9:00 AM", attendees: 320 },
-              { id: 2, name: "Ethiopian Coffee Festival", date: "May 22, 2024", time: "10:00 AM", attendees: 150 },
-              { id: 3, name: "Cultural Heritage Exhibition", date: "May 28, 2024", time: "2:00 PM", attendees: 75 },
-            ].map((event) => (
-              <div key={event.id} className="flex items-start border-b pb-4 last:border-0 last:pb-0">
-                <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary-100 dark:bg-primary-900 mr-4">
-                  <Calendar className="h-6 w-6 text-primary-600" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium">{event.name}</h4>
-                  <div className="flex items-center text-xs text-muted-foreground mt-1">
-                    <CalendarDays className="mr-1 h-3 w-3" />
-                    <span>{event.date}</span>
-                  </div>
-                  <div className="flex items-center text-xs text-muted-foreground mt-1">
-                    <Clock className="mr-1 h-3 w-3" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center text-xs text-muted-foreground mt-1">
-                    <User className="mr-1 h-3 w-3" />
-                    <span>{event.attendees} attendees</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {!data && !error && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex justify-between items-center">
-            <div>
-              <CardTitle>Recent Ticket Sales</CardTitle>
-              <CardDescription>Last 7 days of ticket activity</CardDescription>
-            </div>
-            <Link href="/dashboard/organizer/tickets">
-              <Button variant="outline" size="sm">
-                View All
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  id: 1,
-                  event: "Addis Tech Summit 2024",
-                  buyer: "Abebe Kebede",
-                  date: "May 10, 2024",
-                  amount: "ETB 500",
-                },
-                {
-                  id: 2,
-                  event: "Ethiopian Coffee Festival",
-                  buyer: "Sara Mohammed",
-                  date: "May 9, 2024",
-                  amount: "ETB 300",
-                },
-                {
-                  id: 3,
-                  event: "Cultural Heritage Exhibition",
-                  buyer: "Daniel Tesfaye",
-                  date: "May 8, 2024",
-                  amount: "ETB 200",
-                },
-              ].map((ticket) => (
-                <div
-                  key={ticket.id}
-                  className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0"
-                >
-                  <div>
-                    <p className="font-medium text-sm">{ticket.event}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.buyer}</p>
+      {data && (
+        <>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Total events" value={data.stats.totalEvents} icon={Calendar} />
+            <StatCard label="Upcoming events" value={data.stats.upcomingEvents} icon={CalendarDays} />
+            <StatCard label="Tickets booked" value={data.stats.ticketsSold} icon={Users} />
+            <StatCard label="Ticket revenue" value={formatBirr(data.stats.revenue)} icon={DollarSign} hint="Paid tickets only" />
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming events</CardTitle>
+                <CardDescription>Your next five events</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {data.upcoming.length === 0 && <p className="text-sm text-muted-foreground">No upcoming events.</p>}
+                {data.upcoming.map((e) => (
+                  <Link
+                    key={e.id}
+                    href={`/dashboard/organizer/events/${e.id}`}
+                    className="flex items-center justify-between gap-3 rounded-md border p-3 hover:bg-muted"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{e.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatEventDate(e.date)} · {e.attendees} booked
+                      </p>
+                    </div>
+                    <StatusBadge status={e.approvalStatus} />
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent bookings</CardTitle>
+                <CardDescription>Latest confirmed tickets across your events</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {data.recentBookings.length === 0 && <p className="text-sm text-muted-foreground">No bookings yet.</p>}
+                {data.recentBookings.map((b) => (
+                  <div key={b.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{b.attendee?.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {b.quantity} × {b.ticketType?.name} · {b.event?.title}
+                      </p>
+                    </div>
+                    <StatusBadge status={b.status} />
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-sm">{ticket.amount}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-gray-200 dark:border-gray-700 shadow-md hover:border-primary-400 dark:hover:border-primary-600 transition-all hover:shadow-lg">
-          <CardHeader className="flex justify-between items-center">
-            <div>
-              <CardTitle>Event Approval Status</CardTitle>
-              <CardDescription>Status of your submitted events</CardDescription>
-            </div>
-            <Link href="/dashboard/organizer/events">
-              <Button variant="outline" size="sm">
-                Manage Events
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                { id: 1, name: "Addis Tech Summit 2024", status: "Approved", date: "May 5, 2024" },
-                { id: 2, name: "Ethiopian Coffee Festival", status: "Approved", date: "May 3, 2024" },
-                { id: 3, name: "Cultural Heritage Exhibition", status: "Pending", date: "May 10, 2024" },
-                { id: 4, name: "Business Networking Mixer", status: "Pending", date: "May 11, 2024" },
-              ].map((event) => (
-                <div key={event.id} className="flex justify-between items-center border-b pb-3 last:border-0 last:pb-0">
-                  <div>
-                    <p className="font-medium text-sm">{event.name}</p>
-                    <p className="text-xs text-muted-foreground">Submitted: {event.date}</p>
-                  </div>
-                  <div>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        event.status === "Approved"
-                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                          : event.status === "Pending"
-                            ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                      }`}
-                    >
-                      {event.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      {/* The organizer dashboard is already using cards for all elements, so no changes needed here. */}
-      {/* Just adding a comment to confirm this was checked. */}
+                ))}
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="/dashboard/organizer/attendees">All attendees</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }

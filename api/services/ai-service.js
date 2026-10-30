@@ -600,13 +600,25 @@ class GatewayAIClient {
     }
     const client = new OpenAI({ apiKey, baseURL: this.config.baseURL, timeout: this.config.timeout })
     this.logger.log(`Generating content with ${this.config.model} via AI Gateway`)
-    const response = await client.chat.completions.create({
-      model: this.config.model,
-      messages: [{ role: "user", content: prompt }],
-      temperature: this.config.temperature,
-      max_tokens: this.config.maxTokens,
-      top_p: this.config.topP,
-    })
+    let response
+    try {
+      response = await client.chat.completions.create({
+        model: this.config.model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: this.config.temperature,
+        max_tokens: this.config.maxTokens,
+        top_p: this.config.topP,
+      })
+    } catch (error) {
+      // Auth or billing problems on the gateway mean the feature is simply unavailable.
+      if ([401, 402, 403].includes(error.status)) {
+        this.logger.error("AI Gateway refused the request", error)
+        const unavailable = new Error("AI features are not available on this deployment yet")
+        unavailable.status = 503
+        throw unavailable
+      }
+      throw error
+    }
     return {
       text: response.choices?.[0]?.message?.content || "",
       tokensUsed: response.usage?.total_tokens || 0,

@@ -71,7 +71,7 @@ export default function OrganizerDashboardPage() {
             <StatCard label="Total events" value={data.stats.totalEvents} icon={Calendar} />
             <StatCard label="Upcoming events" value={data.stats.upcomingEvents} icon={CalendarDays} />
             <StatCard label="Tickets booked" value={data.stats.ticketsSold} icon={Users} />
-            <StatCard label="Ticket revenue" value={formatBirr(data.stats.revenue)} icon={DollarSign} hint="Paid tickets only" />
+            <StatCard label="Ticket revenue" value={`ETB ${data.stats.revenue.toLocaleString("en-US")}`} icon={DollarSign} hint="Paid tickets only" />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">

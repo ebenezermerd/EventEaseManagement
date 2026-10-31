@@ -6,7 +6,7 @@ import { Building, Calendar, CalendarDays, CheckCircle2, DollarSign, Loader2, Ti
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatCard } from "@/components/dashboard/stat-card"
-import { api, formatBirr } from "@/lib/api"
+import { api } from "@/lib/api"
 
 interface Stats {
   users: number
@@ -61,7 +61,7 @@ export default function AdminDashboardPage() {
             <StatCard label="Events" value={stats.events} icon={Calendar} hint={`${stats.upcomingEvents} upcoming`} />
             <StatCard label="Bookings" value={stats.bookings} icon={CalendarDays} />
             <StatCard label="Tickets booked" value={stats.ticketsSold} icon={Ticket} />
-            <StatCard label="Ticket revenue" value={formatBirr(stats.revenue)} icon={DollarSign} hint="Paid tickets only" />
+            <StatCard label="Ticket revenue" value={`ETB ${stats.revenue.toLocaleString("en-US")}`} icon={DollarSign} hint="Paid tickets only" />
           </div>
           <Card>
             <CardHeader>

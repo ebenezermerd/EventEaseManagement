@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { ModeToggle } from "@/components/mode-toggle"
 import { Logo } from "@/components/logo"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/contexts/AuthContext"
+import { roleHome } from "@/lib/api"
 
 export function SiteHeader() {
   const pathname = usePathname()
-  const isDashboard = pathname?.startsWith("/dashboard")
+  const { user, role } = useAuth()
 
   const navItems = [
     { href: "/events", label: "Browse Events" },
@@ -42,7 +44,7 @@ export function SiteHeader() {
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center">
             <ModeToggle />
-            {!isDashboard && (
+            {!user && (
               <>
                 <Link href="/login" className="ml-4">
                   <Button variant="ghost" className="text-sm">
@@ -56,8 +58,8 @@ export function SiteHeader() {
                 </Link>
               </>
             )}
-            {isDashboard && (
-              <Link href="/dashboard" className="ml-4">
+            {user && (
+              <Link href={roleHome(role)} className="ml-4">
                 <Button variant="outline" className="text-sm">
                   Dashboard
                 </Button>

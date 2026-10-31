@@ -1,3 +1,4 @@
+import { SampleDataNotice } from "@/components/sample-data-notice"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Calendar, Download, PieChart, TrendingUp, Users } from "lucide-react"
@@ -6,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
+      <SampleDataNotice />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Event Analytics</h1>

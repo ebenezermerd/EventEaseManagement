@@ -46,31 +46,31 @@ export default function AboutPage() {
               <div className="space-y-12">
                 {[
                   {
-                    year: "2023",
-                    title: "EventEase Founded",
-                    description: "Started with a vision to revolutionize event management in Ethiopia.",
+                    year: "01",
+                    title: "Organizers apply",
+                    description: "Companies register with their TIN and an admin reviews the application.",
                   },
                   {
-                    year: "2023",
-                    title: "First Beta Release",
-                    description: "Launched our platform to select organizers in Addis Ababa.",
+                    year: "02",
+                    title: "Events go live",
+                    description: "Approved organizers publish events with free or paid ticket types.",
                   },
                   {
-                    year: "2024",
-                    title: "National Expansion",
-                    description: "Expanded our services to all major cities across Ethiopia.",
+                    year: "03",
+                    title: "Attendees book",
+                    description: "Attendees book tickets and get a reference code for the entrance.",
                   },
                   {
-                    year: "2024",
-                    title: "AI Integration",
-                    description: "Introduced AI-powered event recommendations and templates.",
+                    year: "04",
+                    title: "Check in at the door",
+                    description: "Organizers see their attendee list and check people in on the day.",
                   },
                 ].map((item, index) => (
                   <div key={index} className="relative">
                     <div className={`flex items-center ${index % 2 === 0 ? "flex-row-reverse" : "flex-row"}`}>
                       <div className="w-1/2"></div>
                       <div className="z-10 flex items-center justify-center w-10 h-10 rounded-full bg-primary-600 text-white shadow-lg">
-                        <span className="text-sm font-bold">{item.year.slice(2)}</span>
+                        <span className="text-sm font-bold">{item.year}</span>
                       </div>
                       <div className="w-1/2"></div>
                     </div>
@@ -205,17 +205,17 @@ export default function AboutPage() {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-3xl font-bold mb-6">Trusted by Event Creators Across Ethiopia</h2>
+                <h2 className="text-3xl font-bold mb-6">Built for Event Creators Across Ethiopia</h2>
                 <p className="text-muted-foreground mb-8">
-                  From small community gatherings to large-scale conferences, EventEase powers thousands of successful
-                  events nationwide.
+                  From small community gatherings to large conferences, EventEase gives organizers one place to publish
+                  events and manage attendees.
                 </p>
                 <div className="grid grid-cols-2 gap-6">
                   {[
-                    { label: "Events Managed", value: "5,000+" },
-                    { label: "Tickets Issued", value: "250,000+" },
-                    { label: "Active Organizers", value: "500+" },
-                    { label: "Cities Covered", value: "25+" },
+                    { label: "Account roles", value: "3" },
+                    { label: "Currency", value: "ETB" },
+                    { label: "Regions supported", value: "14" },
+                    { label: "Fee for free events", value: "0" },
                   ].map((stat, index) => (
                     <div key={index} className="bg-muted/50 p-4 rounded-lg">
                       <p className="text-3xl font-bold text-primary-600">{stat.value}</p>
@@ -225,14 +225,7 @@ export default function AboutPage() {
                 </div>
               </div>
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold mb-4">Our Partners & Clients</h3>
-                <div className="grid grid-cols-3 gap-6">
-                  {Array.from({ length: 6 }).map((_, index) => (
-                    <div key={index} className="bg-muted/30 h-20 rounded-md flex items-center justify-center">
-                      <div className="text-muted-foreground font-medium">Partner {index + 1}</div>
-                    </div>
-                  ))}
-                </div>
+                <h3 className="text-xl font-semibold mb-4">Made for every kind of event</h3>
                 <div className="flex flex-wrap gap-2">
                   {["Events", "Conferences", "Workshops", "Concerts", "Exhibitions"].map((tag, index) => (
                     <Badge key={index} variant="outline" className="bg-muted/50">

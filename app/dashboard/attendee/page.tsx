@@ -37,7 +37,25 @@ export default function AttendeeDashboardPage() {
   }, [])
 
   useEffect(() => {
-    load()
+    // Returning from Chapa checkout: confirm the payment, then show bookings.
+    const reference = new URLSearchParams(window.location.search).get("payment")
+    if (!reference) {
+      load()
+      return
+    }
+    api<{ success: boolean; reason?: string }>(`/api/payments/verify/${encodeURIComponent(reference)}`)
+      .then((r) =>
+        toast(
+          r.success
+            ? { title: "Payment received", description: "Your booking is confirmed." }
+            : { title: "Payment not confirmed yet", description: "If you completed checkout, refresh in a moment." },
+        ),
+      )
+      .catch(() => {})
+      .finally(() => {
+        window.history.replaceState(null, "", "/dashboard/attendee")
+        load()
+      })
   }, [load])
 
   const cancel = async (booking: Booking) => {

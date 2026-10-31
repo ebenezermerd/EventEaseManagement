@@ -1,0 +1,3 @@
+# The web project deploys from the repo root; the API is its own Vercel project
+# (root directory api), so keep its files out of this build.
+/api

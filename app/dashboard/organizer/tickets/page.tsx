@@ -48,7 +48,7 @@ const ticketTypes = [
 
 export default function TicketsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [currentTicket, setCurrentTicket] = useState(null)
+  const [currentTicket, setCurrentTicket] = useState<any>(null)
 
   // Sample ticket data
   const tickets = [
@@ -144,12 +144,12 @@ export default function TicketsPage() {
     },
   ]
 
-  const handleEditTicket = (ticket) => {
+  const handleEditTicket = (ticket: any) => {
     setCurrentTicket(ticket)
     setIsEditModalOpen(true)
   }
 
-  const getTicketIcon = (type) => {
+  const getTicketIcon = (type: any) => {
     const ticketType = ticketTypes.find((t) => t.id === type)
     return ticketType ? ticketType.icon : <Ticket className="h-5 w-5" />
   }

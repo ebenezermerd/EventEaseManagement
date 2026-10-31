@@ -127,18 +127,18 @@ export default function OrganizerFinancesPage() {
   })
 
   // Calculate summary statistics based on filtered transactions
-  const calculateStats = (transactions) => {
+  const calculateStats = (transactions: any) => {
     const totalRevenue = transactions
-      .filter((t) => t.status === "completed")
-      .reduce((sum, t) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
+      .filter((t: any) => t.status === "completed")
+      .reduce((sum: any, t: any) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
 
     const pendingRevenue = transactions
-      .filter((t) => t.status === "pending")
-      .reduce((sum, t) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
+      .filter((t: any) => t.status === "pending")
+      .reduce((sum: any, t: any) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
 
     const refundedAmount = transactions
-      .filter((t) => t.status === "refunded")
-      .reduce((sum, t) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
+      .filter((t: any) => t.status === "refunded")
+      .reduce((sum: any, t: any) => sum + Number.parseInt(t.amount.replace("ETB ", "").replace(",", "")), 0)
 
     return { totalRevenue, pendingRevenue, refundedAmount }
   }

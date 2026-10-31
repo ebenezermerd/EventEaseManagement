@@ -127,7 +127,10 @@ exports.bookEvent = async (req, res, next) => {
       } catch (error) {
         await booking.update({ status: "cancelled" })
         console.error("[chapa] initialize failed:", error.message)
-        return res.status(502).json({ success: false, message: "Could not start the payment, please try again" })
+        const reason = /email/i.test(error.message)
+          ? "Chapa did not accept this account's email address. Use a real email domain to pay."
+          : "Could not start the payment, please try again"
+        return res.status(502).json({ success: false, message: reason })
       }
     }
 

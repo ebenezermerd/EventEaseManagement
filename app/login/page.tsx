@@ -1,88 +1,45 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react"
+import { EyeIcon, EyeOffIcon, Loader2, ShieldCheck, Ticket, CalendarPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Logo } from "@/components/logo"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/components/ui/use-toast"
+import { useAuth } from "@/contexts/AuthContext"
+
+// Public demo accounts created by api/scripts/seed.js. They are meant to be shared.
+const DEMO_PASSWORD = "EventEase2026"
+const DEMO_ACCOUNTS = [
+  { label: "Attendee", email: "demo-attendee@eventease.app", icon: Ticket, hint: "Browse and book free events" },
+  { label: "Organizer", email: "demo-organizer@eventease.app", icon: CalendarPlus, hint: "Create events, see attendees" },
+  { label: "Admin", email: "demo-admin@eventease.app", icon: ShieldCheck, hint: "Approve organizers, list users" },
+]
 
 export default function LoginPage() {
-  const router = useRouter()
+  const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const [userType, setUserType] = useState("attendee")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [next, setNext] = useState<string | null>(null)
 
-  // Form state
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false
-  })
+  useEffect(() => {
+    setNext(new URLSearchParams(window.location.search).get("next"))
+  }, [])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const signIn = async (emailValue: string, passwordValue: string) => {
     setIsLoading(true)
-
-    const endpoint = userType === "organizer" 
-      ? "/api/organizers/login" 
-      : "/api/auth/login"
-
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed")
-      }
-
-      // Store token in localStorage or secure cookie
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("userRole", userType)
-
-      // Show success message
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      })
-
-      // Redirect based on user type
-      if (userType === "organizer") {
-        // If organizer is not verified, show a different dashboard view
-        const redirectPath = data.verified 
-          ? "/dashboard/organizer" 
-          : "/dashboard/organizer/pending"
-        router.push(redirectPath)
-      } else {
-        router.push("/dashboard")
-      }
+      const user = await login(emailValue, passwordValue, next)
+      toast({ title: `Welcome, ${user.name.split(" ")[0]}`, description: "You are signed in." })
     } catch (error) {
-      console.error("Login error:", error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to login. Please check your credentials.",
+        title: "Sign in failed",
+        description: error instanceof Error ? error.message : "Please check your email and password.",
         variant: "destructive",
       })
     } finally {
@@ -90,198 +47,106 @@ export default function LoginPage() {
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    signIn(email, password)
+  }
+
   return (
-    <div className="container flex h-screen w-screen flex-col items-center justify-center">
-      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+    <div className="container flex min-h-screen flex-col items-center justify-center py-10">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[420px]">
         <div className="flex flex-col space-y-2 text-center">
-          <div className="flex justify-center mb-4">
+          <div className="mb-4 flex justify-center">
             <Logo />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to your account</p>
+          <p className="text-sm text-muted-foreground">Sign in as an attendee, organizer or admin</p>
         </div>
 
-        <Tabs defaultValue="attendee" value={userType} onValueChange={setUserType} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="attendee">Attendee</TabsTrigger>
-            <TabsTrigger value="organizer">Organizer</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="attendee">
-            <Card>
-              <form onSubmit={handleSubmit}>
-                <CardHeader>
-                  <CardTitle className="text-center">Login as Attendee</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        name="email"
-                        placeholder="name@example.com" 
-                        type="email" 
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Password</Label>
-                        <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
-                      <div className="relative">
-                        <Input 
-                          id="password" 
-                          name="password"
-                          type={showPassword ? "text" : "password"}
-                          value={formData.password}
-                          onChange={handleInputChange} 
-                          required 
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                          <span className="sr-only">
-                            {showPassword ? "Hide password" : "Show password"}
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="remember" 
-                        name="rememberMe"
-                        checked={formData.rememberMe}
-                        onCheckedChange={(checked) => 
-                          setFormData(prev => ({ ...prev, rememberMe: checked as boolean }))
-                        }
-                      />
-                      <label
-                        htmlFor="remember"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Remember me
-                      </label>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
+        <Card>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4 pt-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                    <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                   </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          </TabsContent>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-3">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Sign in
+              </Button>
+              <p className="text-center text-sm text-muted-foreground">
+                New to EventEase?{" "}
+                <Link href="/register" className="text-primary underline-offset-4 hover:underline">
+                  Create an account
+                </Link>
+              </p>
+            </CardFooter>
+          </form>
+        </Card>
 
-          <TabsContent value="organizer">
-            <Card>
-              <form onSubmit={handleSubmit}>
-                <CardHeader>
-                  <CardTitle className="text-center">Login as Organizer</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="organizer-email">Email</Label>
-                      <Input 
-                        id="organizer-email" 
-                        name="email"
-                        placeholder="organizer@example.com" 
-                        type="email"
-                        value={formData.email}
-                        onChange={handleInputChange} 
-                        required 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="organizer-password">Password</Label>
-                        <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-                          Forgot password?
-                        </Link>
-                      </div>
-                      <div className="relative">
-                        <Input 
-                          id="organizer-password" 
-                          name="password"
-                          type={showPassword ? "text" : "password"}
-                          value={formData.password}
-                          onChange={handleInputChange} 
-                          required 
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                          <span className="sr-only">
-                            {showPassword ? "Hide password" : "Show password"}
-                          </span>
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="organizer-remember"
-                        name="rememberMe"
-                        checked={formData.rememberMe}
-                        onCheckedChange={(checked) => 
-                          setFormData(prev => ({ ...prev, rememberMe: checked as boolean }))
-                        }
-                      />
-                      <label
-                        htmlFor="organizer-remember"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        Remember me
-                      </label>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Signing in...
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <div className="text-center text-sm">
-          Don't have an account?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
-            Sign up
-          </Link>
-        </div>
+        <Card className="border-dashed">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Try a demo account</CardTitle>
+            <CardDescription>
+              All three use the password <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground">{DEMO_PASSWORD}</code>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {DEMO_ACCOUNTS.map(({ label, email: demoEmail, icon: Icon, hint }) => (
+              <button
+                key={demoEmail}
+                type="button"
+                disabled={isLoading}
+                onClick={() => {
+                  setEmail(demoEmail)
+                  setPassword(DEMO_PASSWORD)
+                  signIn(demoEmail, DEMO_PASSWORD)
+                }}
+                className="flex w-full items-center gap-3 rounded-md border p-3 text-left transition-colors hover:bg-muted disabled:opacity-60"
+              >
+                <Icon className="h-5 w-5 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-medium">{label}</span>
+                  <span className="block truncate font-mono text-xs text-muted-foreground">{demoEmail}</span>
+                </span>
+                <span className="hidden text-xs text-muted-foreground sm:block">{hint}</span>
+              </button>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

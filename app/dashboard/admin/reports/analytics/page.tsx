@@ -1,3 +1,4 @@
+import { SampleDataNotice } from "@/components/sample-data-notice"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BarChart, Calendar, Download, LineChart, PieChart, TrendingUp, Users } from "lucide-react"
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function AdminAnalyticsPage() {
   return (
     <div className="space-y-6">
+      <SampleDataNotice />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Platform Analytics</h1>

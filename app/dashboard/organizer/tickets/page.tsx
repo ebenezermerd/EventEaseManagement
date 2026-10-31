@@ -1,4 +1,5 @@
 "use client"
+import { SampleDataNotice } from "@/components/sample-data-notice"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -47,7 +48,7 @@ const ticketTypes = [
 
 export default function TicketsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [currentTicket, setCurrentTicket] = useState(null)
+  const [currentTicket, setCurrentTicket] = useState<any>(null)
 
   // Sample ticket data
   const tickets = [
@@ -143,18 +144,19 @@ export default function TicketsPage() {
     },
   ]
 
-  const handleEditTicket = (ticket) => {
+  const handleEditTicket = (ticket: any) => {
     setCurrentTicket(ticket)
     setIsEditModalOpen(true)
   }
 
-  const getTicketIcon = (type) => {
+  const getTicketIcon = (type: any) => {
     const ticketType = ticketTypes.find((t) => t.id === type)
     return ticketType ? ticketType.icon : <Ticket className="h-5 w-5" />
   }
 
   return (
     <div className="space-y-6 p-6">
+      <SampleDataNotice />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Tickets</h1>

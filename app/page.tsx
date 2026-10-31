@@ -7,10 +7,19 @@ import { SiteHeader } from "@/components/site-header"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { getFeaturedEvents } from "@/lib/mock-data/events"
+import { apiServer, formatEventDate, imageSrc, type EventItem } from "@/lib/api"
 
-export default function Home() {
-  const featuredEvents = getFeaturedEvents().slice(0, 3)
+export const revalidate = 60
+
+async function loadFeaturedEvents(): Promise<EventItem[]> {
+  const featured = await apiServer<{ events: EventItem[] }>("/api/events?featured=true&limit=3")
+  if (featured?.events?.length) return featured.events
+  const upcoming = await apiServer<{ events: EventItem[] }>("/api/events?limit=3")
+  return upcoming?.events ?? []
+}
+
+export default async function Home() {
+  const featuredEvents = await loadFeaturedEvents()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -140,7 +149,7 @@ export default function Home() {
               </p>
 
               {/* Advanced Search Bar with Glass Morphism */}
-              <div className="relative group">
+              <form action="/events" method="get" className="relative group">
                 {/* Glow effect on hover */}
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition duration-500"></div>
 
@@ -150,6 +159,7 @@ export default function Home() {
                     <div className="flex-1 flex items-center px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50 group/search">
                       <Search className="h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0 mr-3 transition-transform group-hover/search:scale-110" />
                       <input
+                        name="search"
                         placeholder="Search events..."
                         className="w-full bg-transparent border-0 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-0 text-base font-medium"
                       />
@@ -157,7 +167,7 @@ export default function Home() {
 
                     {/* Location Select */}
                     <div className="md:w-[200px] px-6 py-5 border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50">
-                      <Select>
+                      <Select name="location">
                         <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto w-full">
                           <div className="flex items-center">
                             <MapPin className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3 flex-shrink-0" />
@@ -165,18 +175,20 @@ export default function Home() {
                           </div>
                         </SelectTrigger>
                         <SelectContent className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl rounded-xl">
-                          <SelectItem value="addis">Addis Ababa</SelectItem>
-                          <SelectItem value="hawassa">Hawassa</SelectItem>
-                          <SelectItem value="bahirdar">Bahir Dar</SelectItem>
-                          <SelectItem value="mekele">Mekele</SelectItem>
-                          <SelectItem value="other">Other Locations</SelectItem>
+                          <SelectItem value="all">Anywhere</SelectItem>
+                          <SelectItem value="Addis Ababa">Addis Ababa</SelectItem>
+                          <SelectItem value="Hawassa">Hawassa</SelectItem>
+                          <SelectItem value="Bahir Dar">Bahir Dar</SelectItem>
+                          <SelectItem value="Gondar">Gondar</SelectItem>
+                          <SelectItem value="Mekelle">Mekelle</SelectItem>
+                          <SelectItem value="Dire Dawa">Dire Dawa</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     {/* Category Select */}
                     <div className="md:w-[200px] px-6 py-5 border-b md:border-b-0 border-gray-200/50 dark:border-gray-700/50">
-                      <Select>
+                      <Select name="category">
                         <SelectTrigger className="border-0 bg-transparent focus:ring-0 shadow-none p-0 h-auto w-full">
                           <div className="flex items-center">
                             <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-3 flex-shrink-0" />
@@ -184,12 +196,15 @@ export default function Home() {
                           </div>
                         </SelectTrigger>
                         <SelectContent className="border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl rounded-xl">
-                          <SelectItem value="tech">Technology</SelectItem>
-                          <SelectItem value="business">Business</SelectItem>
-                          <SelectItem value="cultural">Cultural</SelectItem>
-                          <SelectItem value="music">Music & Entertainment</SelectItem>
-                          <SelectItem value="sports">Sports & Fitness</SelectItem>
-                          <SelectItem value="education">Education & Workshop</SelectItem>
+                          <SelectItem value="all">All categories</SelectItem>
+                          <SelectItem value="Technology">Technology</SelectItem>
+                          <SelectItem value="Business">Business</SelectItem>
+                          <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
+                          <SelectItem value="Music">Music</SelectItem>
+                          <SelectItem value="Food & Drink">Food & Drink</SelectItem>
+                          <SelectItem value="Sports & Fitness">Sports & Fitness</SelectItem>
+                          <SelectItem value="Education">Education</SelectItem>
+                          <SelectItem value="Festivals">Festivals</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -197,6 +212,7 @@ export default function Home() {
                     {/* Search Button */}
                     <div className="p-2">
                       <Button
+                        type="submit"
                         size="lg"
                         className="w-full md:w-auto px-8 py-6 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base group/btn border-0"
                       >
@@ -206,37 +222,19 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </form>
 
-              {/* Stats or Quick Actions */}
-              <div className="mt-12 flex flex-wrap gap-8 items-center">
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-gray-900 bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-sm shadow-lg">
-                        {i}K
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-bold text-gray-900 dark:text-white">4,000+ Active Users</p>
-                    <p className="text-gray-600 dark:text-gray-400">Join the community</p>
-                  </div>
-                </div>
-                <div className="h-12 w-px bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <svg key={i} className="w-5 h-5 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-bold text-gray-900 dark:text-white">5.0 Rating</p>
-                    <p className="text-gray-600 dark:text-gray-400">From 2,000+ reviews</p>
-                  </div>
-                </div>
+              {/* Quick actions */}
+              <div className="mt-12 flex flex-wrap gap-4 items-center text-sm">
+                <Link href="/events" className="inline-flex items-center gap-2 font-semibold text-purple-700 dark:text-purple-300 hover:underline">
+                  <CalendarDays className="h-5 w-5" />
+                  Browse upcoming events
+                </Link>
+                <span className="h-5 w-px bg-gray-300 dark:bg-gray-700 hidden sm:block" />
+                <Link href="/login" className="inline-flex items-center gap-2 text-gray-700 dark:text-gray-300 hover:underline">
+                  <Users className="h-5 w-5" />
+                  Try a demo account
+                </Link>
               </div>
             </div>
           </div>
@@ -251,6 +249,9 @@ export default function Home() {
                 Discover the hottest events happening across Ethiopia
               </p>
             </div>
+            {featuredEvents.length === 0 && (
+              <p className="text-center text-muted-foreground">Events are loading or temporarily unavailable.</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {featuredEvents.map((event) => (
                 <Link key={event.id} href={`/events/${event.id}`}>
@@ -259,7 +260,7 @@ export default function Home() {
                   >
                     <div className="aspect-[16/9] relative overflow-hidden">
                       <Image
-                        src={event.image || "/assets/image (22).jpg"}
+                        src={imageSrc(event.image)}
                         alt={event.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -271,7 +272,7 @@ export default function Home() {
                       <div className="space-y-2 text-sm text-muted-foreground">
                         <div className="flex items-center">
                           <CalendarDays className="h-4 w-4 mr-2 text-primary/70" />
-                          <span>{event.eventDate}</span>
+                          <span>{formatEventDate(event.date)}</span>
                         </div>
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-2 text-primary/70" />

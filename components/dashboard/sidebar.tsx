@@ -28,9 +28,8 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-// This would come from authentication in a real app
-type UserRole = "admin" | "organizer" | "attendee"
+import { useAuth } from "@/contexts/AuthContext"
+import { roleHome } from "@/lib/api"
 
 interface DashboardSidebarProps {
   collapsed?: boolean
@@ -46,32 +45,18 @@ export function DashboardSidebar({
   onMobileOpenChange,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const [userRole, setUserRole] = useState<UserRole>("organizer")
+  const { role: userRole } = useAuth()
   const [internalCollapsed, setInternalCollapsed] = useState(false)
 
   // Use either controlled or uncontrolled state
   const collapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed
   const isMobileMenuOpen = mobileOpen !== undefined ? mobileOpen : false
 
-  // For demo purposes, allow switching roles
-  useEffect(() => {
-    // Check if we're in the admin section
-    if (pathname?.includes("/dashboard/admin")) {
-      setUserRole("admin")
-    } else if (pathname?.includes("/dashboard/organizer")) {
-      setUserRole("organizer")
-    }
-  }, [pathname])
-
   const isActive = (href: string) => {
     // Exact match is always active
     if (pathname === href) return true
     
-    // Special handling for dashboard root to prevent it from being active in subsections
-    if (href === "/dashboard") {
-      return pathname === "/dashboard"
-    }
-    
+
     // For all other routes, only mark active if this is an exact match
     // This prevents parent routes from staying active when child routes are selected
     return false
@@ -172,7 +157,7 @@ export function DashboardSidebar({
           <div className="flex-1 overflow-y-auto py-4 px-4">
             <div className="space-y-6">
               <NavSection title="Overview">
-                <NavItem href="/dashboard" icon={Home} active={isActive("/dashboard")}>
+                <NavItem href={roleHome(userRole)} icon={Home} active={isActive(roleHome(userRole))}>
                   Dashboard
                 </NavItem>
               </NavSection>
@@ -185,21 +170,24 @@ export function DashboardSidebar({
                       User Management
                     </NavItem>
                     <NavItem
-                      href="/dashboard/admin/organizations"
-                      icon={Building}
-                      active={isActive("/dashboard/admin/organizations")}
-                    >
-                      Organizations
-                    </NavItem>
-                    <NavItem
                       href="/dashboard/admin/approvals"
                       icon={CheckCircle2}
                       active={isActive("/dashboard/admin/approvals")}
                     >
-                      Event Approvals
+                      Organizer Approvals
+                    </NavItem>
+                    <NavItem
+                      href="/dashboard/admin/organizations"
+                      icon={Building}
+                      active={isActive("/dashboard/admin/organizations")}
+                    >
+                      Organizers
+                    </NavItem>
+                    <NavItem href="/dashboard/admin/events" icon={Calendar} active={isActive("/dashboard/admin/events")}>
+                      Events
                     </NavItem>
                   </NavSection>
-                  <NavSection title="Reports">
+                  <NavSection title="Reports (sample data)">
                     <NavItem
                       href="/dashboard/admin/reports/financial"
                       icon={CreditCard}
@@ -237,18 +225,20 @@ export function DashboardSidebar({
                       Create Event
                     </NavItem>
                     <NavItem
-                      href="/dashboard/organizer/orders"
-                      icon={ShoppingCart}
-                      active={isActive("/dashboard/organizer/orders")}
-                    >
-                      Orders
-                    </NavItem>
-                    <NavItem
                       href="/dashboard/organizer/attendees"
                       icon={Users}
                       active={isActive("/dashboard/organizer/attendees")}
                     >
                       Attendees
+                    </NavItem>
+                  </NavSection>
+                  <NavSection title="Insights (sample data)">
+                    <NavItem
+                      href="/dashboard/organizer/order"
+                      icon={ShoppingCart}
+                      active={isActive("/dashboard/organizer/order")}
+                    >
+                      Orders
                     </NavItem>
                     <NavItem
                       href="/dashboard/organizer/tickets"
@@ -257,8 +247,6 @@ export function DashboardSidebar({
                     >
                       Tickets
                     </NavItem>
-                  </NavSection>
-                  <NavSection title="Analytics">
                     <NavItem
                       href="/dashboard/organizer/analytics"
                       icon={PieChart}
@@ -273,8 +261,6 @@ export function DashboardSidebar({
                     >
                       Financial Reports
                     </NavItem>
-                  </NavSection>
-                  <NavSection title="History">
                     <NavItem
                       href="/dashboard/organizer/past-events"
                       icon={Clock}
@@ -284,6 +270,17 @@ export function DashboardSidebar({
                     </NavItem>
                   </NavSection>
                 </>
+              )}
+
+              {userRole === "attendee" && (
+                <NavSection title="Tickets">
+                  <NavItem href="/dashboard/attendee" icon={Ticket} active={isActive("/dashboard/attendee")}>
+                    My Bookings
+                  </NavItem>
+                  <NavItem href="/events" icon={Calendar} active={false}>
+                    Browse Events
+                  </NavItem>
+                </NavSection>
               )}
 
               {/* Settings for all roles */}

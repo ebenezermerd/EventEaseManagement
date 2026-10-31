@@ -1,4 +1,5 @@
 "use client"
+import { SampleDataNotice } from "@/components/sample-data-notice"
 
 import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 
 export default function PastEventsPage() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [selectedEvent, setSelectedEvent] = useState<any>(null)
 
   // Sample data for past events
   const pastEvents = [
@@ -287,13 +288,14 @@ export default function PastEventsPage() {
     },
   ]
 
-  const handleViewReport = (event) => {
+  const handleViewReport = (event: any) => {
     setSelectedEvent(event)
     setIsReportModalOpen(true)
   }
 
   return (
     <div className="space-y-6 p-6">
+      <SampleDataNotice />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Past Events</h1>
@@ -445,7 +447,7 @@ export default function PastEventsPage() {
                     <CardContent>
                       <div className="text-2xl font-bold">{selectedEvent.rating}</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        From {selectedEvent.feedback.reduce((sum, item) => sum + item.count, 0)} reviews
+                        From {selectedEvent.feedback.reduce((sum: any, item: any) => sum + item.count, 0)} reviews
                       </div>
                     </CardContent>
                   </Card>
@@ -494,7 +496,7 @@ export default function PastEventsPage() {
                             <div>
                               <h3 className="font-medium text-sm text-muted-foreground mb-1">Categories</h3>
                               <div className="flex flex-wrap gap-2">
-                                {selectedEvent.categories.map((category, index) => (
+                                {selectedEvent.categories.map((category: any, index: any) => (
                                   <Badge key={index} variant="outline">
                                     {category}
                                   </Badge>
@@ -512,7 +514,7 @@ export default function PastEventsPage() {
                             <div>
                               <h3 className="font-medium text-sm text-muted-foreground mb-1">Sponsors</h3>
                               <div className="flex flex-wrap gap-3 mt-2">
-                                {selectedEvent.sponsors.map((sponsor, index) => (
+                                {selectedEvent.sponsors.map((sponsor: any, index: any) => (
                                   <div key={index} className="flex items-center gap-2 border rounded-md p-2">
                                     <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
                                       <img
@@ -564,7 +566,7 @@ export default function PastEventsPage() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-4">
-                            {selectedEvent.topAttendees.map((attendee, index) => (
+                            {selectedEvent.topAttendees.map((attendee: any, index: any) => (
                               <div key={index} className="flex items-center gap-3">
                                 <Avatar>
                                   <AvatarImage src={attendee.avatar || "/placeholder.svg"} alt={attendee.name} />
@@ -614,7 +616,7 @@ export default function PastEventsPage() {
                                         style={{ width: `${percentage}%` }}
                                       ></div>
                                     </div>
-                                    <div className="mt-1">{percentage}%</div>
+                                    <div className="mt-1">{String(percentage)}%</div>
                                   </div>
                                 ))}
                               </div>
@@ -711,7 +713,7 @@ export default function PastEventsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {selectedEvent.timeline.map((item, index) => (
+                              {selectedEvent.timeline.map((item: any, index: any) => (
                                 <TableRow key={index}>
                                   <TableCell className="font-medium">{item.activity}</TableCell>
                                   <TableCell>{item.time}</TableCell>
@@ -885,13 +887,13 @@ export default function PastEventsPage() {
                                   ))}
                                 </div>
                                 <p className="text-sm text-muted-foreground">
-                                  Based on {selectedEvent.feedback.reduce((sum, item) => sum + item.count, 0)} reviews
+                                  Based on {selectedEvent.feedback.reduce((sum: any, item: any) => sum + item.count, 0)} reviews
                                 </p>
                               </div>
                             </div>
 
                             <div className="space-y-3">
-                              {selectedEvent.feedback.map((item, index) => (
+                              {selectedEvent.feedback.map((item: any, index: any) => (
                                 <div key={index} className="flex items-center gap-2">
                                   <div className="w-12 text-sm">{item.rating} stars</div>
                                   <div className="flex-1">
@@ -899,7 +901,7 @@ export default function PastEventsPage() {
                                       <div
                                         className="bg-amber-500 h-2 rounded-full"
                                         style={{
-                                          width: `${(item.count / selectedEvent.feedback.reduce((sum, i) => sum + i.count, 0)) * 100}%`,
+                                          width: `${(item.count / selectedEvent.feedback.reduce((sum: any, i: any) => sum + i.count, 0)) * 100}%`,
                                         }}
                                       ></div>
                                     </div>
@@ -1017,7 +1019,7 @@ export default function PastEventsPage() {
                       </CardHeader>
                       <CardContent>
                         <div className="relative border-l-2 border-muted pl-6 ml-4 space-y-8">
-                          {selectedEvent.timeline.map((item, index) => (
+                          {selectedEvent.timeline.map((item: any, index: any) => (
                             <div key={index} className="relative">
                               <div className="absolute -left-[30px] h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                                 <Clock className="h-3 w-3 text-primary-foreground" />
@@ -1055,7 +1057,7 @@ export default function PastEventsPage() {
                               <span className="text-sm">Peak Attendance Time</span>
                               <span className="font-medium">
                                 {
-                                  selectedEvent.timeline.reduce((max, item) =>
+                                  selectedEvent.timeline.reduce((max: any, item: any) =>
                                     item.attendees > max.attendees ? item : max,
                                   ).time
                                 }
@@ -1065,7 +1067,7 @@ export default function PastEventsPage() {
                               <span className="text-sm">Lowest Attendance Time</span>
                               <span className="font-medium">
                                 {
-                                  selectedEvent.timeline.reduce((min, item) =>
+                                  selectedEvent.timeline.reduce((min: any, item: any) =>
                                     item.attendees < min.attendees ? item : min,
                                   ).time
                                 }
@@ -1075,7 +1077,7 @@ export default function PastEventsPage() {
                               <span className="text-sm">Average Attendance</span>
                               <span className="font-medium">
                                 {Math.round(
-                                  selectedEvent.timeline.reduce((sum, item) => sum + item.attendees, 0) /
+                                  selectedEvent.timeline.reduce((sum: any, item: any) => sum + item.attendees, 0) /
                                     selectedEvent.timeline.length,
                                 )}{" "}
                                 attendees
@@ -1100,7 +1102,7 @@ export default function PastEventsPage() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {selectedEvent.timeline.map((item, index) => (
+                                {selectedEvent.timeline.map((item: any, index: any) => (
                                   <TableRow key={index}>
                                     <TableCell className="font-medium">{item.activity}</TableCell>
                                     <TableCell>

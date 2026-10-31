@@ -1,366 +1,156 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { Download, Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Search, Filter, Download, Mail } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Clock, MapPin, Phone, User, CalendarIcon } from "lucide-react"
-import { useState } from "react"
+import { toast } from "@/components/ui/use-toast"
+import { StatusBadge } from "@/components/dashboard/status-badge"
+import { api, formatBirr, formatEventDate, type Booking, type EventItem } from "@/lib/api"
 
-export default function AttendeesPage() {
-  const [selectedAttendee, setSelectedAttendee] = useState(null)
+export default function OrganizerAttendeesPage() {
+  const [attendees, setAttendees] = useState<Booking[] | null>(null)
+  const [events, setEvents] = useState<EventItem[]>([])
+  const [eventId, setEventId] = useState("all")
+  const [search, setSearch] = useState("")
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(() => {
+    const qs = eventId === "all" ? "" : `?eventId=${eventId}`
+    api<{ attendees: Booking[] }>(`/api/organizers/attendees${qs}`)
+      .then((d) => setAttendees(d.attendees))
+      .catch((e) => setError(e.message))
+  }, [eventId])
+
+  useEffect(load, [load])
+  useEffect(() => {
+    api<{ events: EventItem[] }>("/api/organizers/events")
+      .then((d) => setEvents(d.events))
+      .catch(() => {})
+  }, [])
+
+  const shown = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return (attendees ?? []).filter(
+      (b) => !q || b.attendee?.name.toLowerCase().includes(q) || b.attendee?.email.toLowerCase().includes(q) || b.bookingReference.toLowerCase().includes(q),
+    )
+  }, [attendees, search])
+
+  const checkIn = async (b: Booking) => {
+    try {
+      await api(`/api/organizer/bookings/${b.id}/check-in`, { method: "PUT" })
+      toast({ title: "Checked in", description: b.attendee?.name })
+      load()
+    } catch (e) {
+      toast({ title: "Could not check in", description: e instanceof Error ? e.message : "", variant: "destructive" })
+    }
+  }
+
+  const exportCsv = () => {
+    const rows = [["Name", "Email", "Event", "Ticket", "Quantity", "Reference", "Status"]]
+    for (const b of shown) {
+      rows.push([b.attendee?.name || "", b.attendee?.email || "", b.event?.title || "", b.ticketType?.name || "", String(b.quantity), b.bookingReference, b.status])
+    }
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(",")).join("\n")
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }))
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "attendees.csv"
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Attendees</h1>
-          <p className="text-muted-foreground">Manage attendees for all your events</p>
+          <p className="text-muted-foreground">Everyone who booked your events</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Mail className="h-4 w-4" />
-            Email All
-          </Button>
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search attendees..." className="pl-8" />
-        </div>
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by event" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Events</SelectItem>
-            <SelectItem value="event1">Addis Tech Summit 2024</SelectItem>
-            <SelectItem value="event2">Ethiopian Coffee Festival</SelectItem>
-            <SelectItem value="event3">Cultural Heritage Exhibition</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button variant="outline" size="icon">
-          <Filter className="h-4 w-4" />
+        <Button variant="outline" onClick={exportCsv} disabled={!shown.length}>
+          <Download className="mr-2 h-4 w-4" /> Export CSV
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Attendee List</CardTitle>
-          <CardDescription>View and manage all attendees for your events</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Search name, email or reference" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <select
+          value={eventId}
+          onChange={(e) => setEventId(e.target.value)}
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm sm:w-72"
+          aria-label="Filter by event"
+        >
+          <option value="all">All events</option>
+          {events.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.title}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {!attendees && !error && <Loader2 className="h-6 w-6 animate-spin text-primary" />}
+
+      {attendees && (
+        <Card>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Attendee</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Ticket Type</TableHead>
+                  <TableHead className="hidden md:table-cell">Event</TableHead>
+                  <TableHead>Tickets</TableHead>
+                  <TableHead className="hidden sm:table-cell">Reference</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">Check in</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[
-                  {
-                    name: "Abebe Kebede",
-                    email: "abebe@example.com",
-                    event: "Addis Tech Summit 2024",
-                    ticket: "VIP",
-                    status: "Checked In",
-                  },
-                  {
-                    name: "Sara Mohammed",
-                    email: "sara@example.com",
-                    event: "Addis Tech Summit 2024",
-                    ticket: "General",
-                    status: "Registered",
-                  },
-                  {
-                    name: "Daniel Tesfaye",
-                    email: "daniel@example.com",
-                    event: "Ethiopian Coffee Festival",
-                    ticket: "General",
-                    status: "Checked In",
-                  },
-                  {
-                    name: "Hiwot Girma",
-                    email: "hiwot@example.com",
-                    event: "Cultural Heritage Exhibition",
-                    ticket: "VIP",
-                    status: "Registered",
-                  },
-                  {
-                    name: "Yonas Haile",
-                    email: "yonas@example.com",
-                    event: "Ethiopian Coffee Festival",
-                    ticket: "General",
-                    status: "Cancelled",
-                  },
-                ].map((attendee, i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage
-                            src={`/placeholder.svg?height=40&width=40&text=${attendee.name.substring(0, 2)}`}
-                          />
-                          <AvatarFallback>{attendee.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{attendee.name}</p>
-                        </div>
-                      </div>
+                {shown.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                      No attendees yet.
                     </TableCell>
-                    <TableCell>{attendee.email}</TableCell>
-                    <TableCell>{attendee.event}</TableCell>
-                    <TableCell>{attendee.ticket}</TableCell>
+                  </TableRow>
+                )}
+                {shown.map((b) => (
+                  <TableRow key={b.id}>
                     <TableCell>
-                      <Badge
-                        className={
-                          attendee.status === "Checked In"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                            : attendee.status === "Registered"
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                        }
-                      >
-                        {attendee.status}
-                      </Badge>
+                      <p className="font-medium">{b.attendee?.name}</p>
+                      <p className="text-xs text-muted-foreground">{b.attendee?.email}</p>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <p className="max-w-[240px] truncate">{b.event?.title}</p>
+                      <p className="text-xs text-muted-foreground">{b.event && formatEventDate(b.event.date)}</p>
+                    </TableCell>
+                    <TableCell>
+                      {b.quantity} × {b.ticketType?.name}
+                      <p className="text-xs text-muted-foreground">{formatBirr(b.totalPrice)}</p>
+                    </TableCell>
+                    <TableCell className="hidden font-mono text-xs sm:table-cell">{b.bookingReference}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={b.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm" onClick={() => setSelectedAttendee(attendee)}>
-                            View Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle>Attendee Details</DialogTitle>
-                            <DialogDescription>View detailed information about this attendee</DialogDescription>
-                          </DialogHeader>
-
-                          {selectedAttendee && (
-                            <div className="overflow-y-auto pr-2">
-                              <div className="flex items-center gap-4 mb-6">
-                                <Avatar className="h-16 w-16">
-                                  <AvatarImage
-                                    src={`/placeholder.svg?height=64&width=64&text=${selectedAttendee.name.substring(0, 2)}`}
-                                  />
-                                  <AvatarFallback>{selectedAttendee.name.substring(0, 2)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <h3 className="text-xl font-semibold">{selectedAttendee.name}</h3>
-                                  <p className="text-sm text-muted-foreground">{selectedAttendee.email}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge
-                                      className={
-                                        selectedAttendee.status === "Checked In"
-                                          ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                          : selectedAttendee.status === "Registered"
-                                            ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-                                            : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                      }
-                                    >
-                                      {selectedAttendee.status}
-                                    </Badge>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <Card className="mb-6">
-                                <CardHeader className="pb-2">
-                                  <CardTitle className="text-base">Contact Information</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="flex items-center gap-2">
-                                      <Mail className="h-4 w-4 text-muted-foreground" />
-                                      <span>{selectedAttendee.email}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <Phone className="h-4 w-4 text-muted-foreground" />
-                                      <span>+251 91 234 5678</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <User className="h-4 w-4 text-muted-foreground" />
-                                      <span>ID: ATT-{Math.floor(1000 + Math.random() * 9000)}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                                      <span>Addis Ababa, Ethiopia</span>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-
-                              <Tabs defaultValue="current" className="w-full">
-                                <TabsList className="grid w-full grid-cols-3 mb-4">
-                                  <TabsTrigger value="current">Current Event</TabsTrigger>
-                                  <TabsTrigger value="past">Past Events</TabsTrigger>
-                                  <TabsTrigger value="upcoming">Upcoming Events</TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="current" className="space-y-4">
-                                  <Card>
-                                    <CardHeader className="pb-2">
-                                      <CardTitle className="text-base">{selectedAttendee.event}</CardTitle>
-                                      <CardDescription>Current event details</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                      <div className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <div className="flex items-center gap-2">
-                                            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                            <span>May 15, 2024</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Clock className="h-4 w-4 text-muted-foreground" />
-                                            <span>9:00 AM - 5:00 PM</span>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{selectedAttendee.ticket}</Badge>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                                            <span>Millennium Hall, Addis Ababa</span>
-                                          </div>
-                                        </div>
-
-                                        <div>
-                                          <h4 className="text-sm font-medium mb-2">Check-in Status</h4>
-                                          <div className="flex items-center gap-2">
-                                            {selectedAttendee.status === "Checked In" ? (
-                                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                Checked In at 9:15 AM
-                                              </Badge>
-                                            ) : selectedAttendee.status === "Registered" ? (
-                                              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                                Not Checked In Yet
-                                              </Badge>
-                                            ) : (
-                                              <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                                                Cancelled
-                                              </Badge>
-                                            )}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                </TabsContent>
-
-                                <TabsContent value="past" className="space-y-4">
-                                  {[
-                                    {
-                                      name: "Ethiopian Coffee Festival 2023",
-                                      date: "November 12, 2023",
-                                      ticket: "General",
-                                      status: "Attended",
-                                      venue: "Friendship Park, Addis Ababa",
-                                    },
-                                    {
-                                      name: "Tech Meetup Addis",
-                                      date: "January 25, 2024",
-                                      ticket: "VIP",
-                                      status: "Attended",
-                                      venue: "iceaddis, Addis Ababa",
-                                    },
-                                  ].map((event, i) => (
-                                    <Card key={i}>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-base">{event.name}</CardTitle>
-                                        <CardDescription>{event.date}</CardDescription>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{event.ticket}</Badge>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                              {event.status}
-                                            </Badge>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                                            <span>{event.venue}</span>
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))}
-                                </TabsContent>
-
-                                <TabsContent value="upcoming" className="space-y-4">
-                                  {[
-                                    {
-                                      name: "Cultural Heritage Exhibition",
-                                      date: "May 28, 2024",
-                                      ticket: "VIP",
-                                      status: "Registered",
-                                      venue: "National Museum, Addis Ababa",
-                                    },
-                                  ].map((event, i) => (
-                                    <Card key={i}>
-                                      <CardHeader className="pb-2">
-                                        <CardTitle className="text-base">{event.name}</CardTitle>
-                                        <CardDescription>{event.date}</CardDescription>
-                                      </CardHeader>
-                                      <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{event.ticket}</Badge>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                              {event.status}
-                                            </Badge>
-                                          </div>
-                                          <div className="flex items-center gap-2">
-                                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                                            <span>{event.venue}</span>
-                                          </div>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))}
-                                </TabsContent>
-                              </Tabs>
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
+                      {b.status === "confirmed" && (
+                        <Button size="sm" variant="outline" onClick={() => checkIn(b)}>
+                          Check in
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

@@ -1,12 +1,14 @@
 "use client"
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Bell, ChevronRight, LogOut, Settings, CreditCard, FileText, Menu } from "lucide-react"
+import { ChevronRight, LogOut, Settings, Home, Menu } from "lucide-react"
 import Link from "next/link"
 import { ModeToggle } from "@/components/mode-toggle"
 import { usePathname } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/contexts/AuthContext"
+import { roleHome } from "@/lib/api"
 
 interface BreadcrumbItem {
   label: string
@@ -19,23 +21,41 @@ interface TopNavProps {
 
 export function TopNav({ onMobileMenuToggle }: TopNavProps) {
   const pathname = usePathname()
+  const { user, role, logout } = useAuth()
+  const initials = (user?.name || "?")
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   // Generate breadcrumbs based on current path
   const generateBreadcrumbs = (): BreadcrumbItem[] => {
-    if (!pathname) return [{ label: "Dashboard", href: "/dashboard" }]
+    const home = roleHome(role)
+    if (!pathname) return [{ label: "Dashboard", href: home }]
 
     const paths = pathname.split("/").filter(Boolean)
-    const breadcrumbs: BreadcrumbItem[] = [{ label: "Dashboard", href: "/dashboard" }]
+    const breadcrumbs: BreadcrumbItem[] = [{ label: "Dashboard", href: home }]
 
     let currentPath = ""
     paths.forEach((path, index) => {
-      // Skip the first "dashboard" path since we already added it
+      // Skip "dashboard" and the role segment, both covered by the first crumb
       if (index === 0 && path === "dashboard") return
+      if (index === 1 && ["admin", "organizer", "attendee"].includes(path)) {
+        currentPath += `/dashboard/${path}`
+        return
+      }
+      // Long ids are not meaningful labels
+      if (path.length > 24) {
+        currentPath += `/${path}`
+        breadcrumbs.push({ label: "Details", href: currentPath })
+        return
+      }
 
-      currentPath += `/${path}`
+      currentPath += index === 0 ? `/${path}` : `/${path}`
       breadcrumbs.push({
-        label: path.charAt(0).toUpperCase() + path.slice(1),
-        href: index === 0 ? `/${path}` : `${breadcrumbs[breadcrumbs.length - 1].href}/${path}`,
+        label: (path.charAt(0).toUpperCase() + path.slice(1)).replace(/-/g, " "),
+        href: currentPath,
       })
     })
 
@@ -72,33 +92,26 @@ export function TopNav({ onMobileMenuToggle }: TopNavProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 ml-auto">
-        <button
-          type="button"
-          className="p-1.5 sm:p-2 hover:bg-muted rounded-full transition-colors"
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-        </button>
-
         <ModeToggle />
 
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
             <Avatar className="h-7 w-7 sm:h-8 sm:w-8 cursor-pointer">
-              <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-              <AvatarFallback>U</AvatarFallback>
+              <AvatarImage src={user?.avatar || undefined} alt={user?.name || "Account"} />
+              <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={8} className="w-[280px] sm:w-80 p-0">
             <div className="p-4">
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarImage src={user?.avatar || undefined} alt={user?.name || "Account"} />
+                  <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
-                <div>
-                  <p className="text-sm font-medium">User Name</p>
-                  <p className="text-xs text-muted-foreground">user@example.com</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{user?.name || "Signed in"}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  {role && <p className="text-xs capitalize text-primary">{role}</p>}
                 </div>
               </div>
 
@@ -110,21 +123,18 @@ export function TopNav({ onMobileMenuToggle }: TopNavProps) {
                   <Settings className="h-4 w-4" />
                   <span>Settings</span>
                 </Link>
-                <Link
-                  href="/dashboard/billing"
-                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-sm"
+                <Link href="/" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-sm">
+                  <Home className="h-4 w-4" />
+                  <span>Back to site</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="flex w-full items-center gap-2 p-2 rounded-md hover:bg-muted text-sm"
                 >
-                  <CreditCard className="h-4 w-4" />
-                  <span>Billing</span>
-                </Link>
-                <Link href="/terms" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-sm">
-                  <FileText className="h-4 w-4" />
-                  <span>Terms & Policies</span>
-                </Link>
-                <Link href="/logout" className="flex items-center gap-2 p-2 rounded-md hover:bg-muted text-sm">
                   <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </Link>
+                  <span>Sign out</span>
+                </button>
               </div>
             </div>
           </DropdownMenuContent>

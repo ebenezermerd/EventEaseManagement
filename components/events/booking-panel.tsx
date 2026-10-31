@@ -173,7 +173,7 @@ export function BookingPanel({ event }: { event: EventItem }) {
           </Button>
         )}
         {ticket && ticket.price > 0 && (
-          <p className="text-center text-xs text-muted-foreground">Paid checkout runs in Chapa test mode and is coming soon.</p>
+          <p className="text-center text-xs text-muted-foreground">Paid tickets are processed by Chapa in test mode, so no real money moves.</p>
         )}
       </CardContent>
     </Card>

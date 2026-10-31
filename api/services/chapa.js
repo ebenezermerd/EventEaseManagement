@@ -53,8 +53,14 @@ async function initializeTransaction({ amount, email, firstName, lastName, txRef
 
 // True when Chapa reports the transaction as paid.
 async function verifyTransaction(txRef) {
-  const { data } = await client().get(`/transaction/verify/${encodeURIComponent(txRef)}`)
-  return data?.status === "success" && data?.data?.status === "success"
+  try {
+    const { data } = await client().get(`/transaction/verify/${encodeURIComponent(txRef)}`)
+    return data?.status === "success" && data?.data?.status === "success"
+  } catch (error) {
+    // Chapa answers 4xx for unknown or unpaid references; treat that as not paid.
+    if (error.response && error.response.status < 500) return false
+    throw error
+  }
 }
 
 module.exports = { isEnabled, initializeTransaction, verifyTransaction }

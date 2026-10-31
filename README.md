@@ -3,7 +3,7 @@
 EventEase is an event platform for Ethiopia. Attendees discover and book events, organizers publish events and manage their attendees, and admins approve organizers and moderate the platform.
 
 * Web app: https://eventeaser.vercel.app
-* API: https://eventease-api.vercel.app (health check at `/health`)
+* API: https://eventease-api-chi.vercel.app (health check at `/health`)
 
 ## Demo accounts
 
@@ -41,15 +41,16 @@ One repository, two Vercel projects:
 ## Still sample data or disabled
 
 * Organizer analytics, finances, tickets and orders pages and the admin report pages show illustrative figures and are labelled "Sample data".
-* Paid checkout: without `CHAPA_SECRET_KEY` paid tickets answer "Paid checkout is in test mode and coming soon".
-* AI event generation goes through the Vercel AI Gateway and answers 503 until the gateway is enabled for the team.
+* Paid checkout runs through Chapa in **test mode** (no real money). Without `CHAPA_SECRET_KEY` paid tickets answer "Paid checkout is in test mode and coming soon". Chapa rejects placeholder email domains such as example.com, so pay with an account that has a real email domain.
+* AI event generation (`POST /api/organizers/events/generate`) goes through the Vercel AI Gateway with `google/gemini-2.5-flash`; it has no UI yet.
 * Email is logged instead of sent unless SMTP settings exist.
 * Calendar sync, push and SMS notifications, file storage and order exports were ported but stay off unless `ENABLE_EXTENDED_MODULES=true` and their providers are configured.
 
 ### TODO
 
-* [ ] Add a Chapa **test** secret key as `CHAPA_SECRET_KEY` on the `eventease-api` project to enable paid checkout in test mode, then set the Chapa callback to `https://eventease-api.vercel.app/api/payments/chapa/callback`.
-* [ ] Add a payment method to the Vercel team so the AI Gateway can serve event generation requests.
+* [x] Chapa test keys are set on `eventease-api`; the callback is `https://eventease-api-chi.vercel.app/api/payments/chapa/callback`.
+* [ ] Switch to live Chapa keys only after the business account is verified.
+* [ ] Add an organizer UI for AI event drafts.
 
 ## Local development
 
